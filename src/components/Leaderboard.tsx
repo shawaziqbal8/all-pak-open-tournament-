@@ -4,6 +4,7 @@
  */
 
 import React, { useState } from 'react';
+import { printHtml } from '../utils/print';
 import { Team, TournamentStats } from '../types';
 import { Search, Trophy, TrendingUp, Users, DollarSign, Activity, CheckCircle2, Download, X, Scale } from 'lucide-react';
 
@@ -420,7 +421,27 @@ export default function Leaderboard({ teams, stats }: LeaderboardProps) {
                
                <div className="relative z-10 flex items-center gap-3">
                  <button
-                   onClick={() => window.print()}
+                   onClick={() => {
+                     const printContent = `
+                       <div style="font-family: sans-serif; padding: 20px; border: 2px solid #000; max-width: 400px; margin: 0 auto; text-align: center;">
+                         <h1 style="margin-bottom: 5px; text-transform: uppercase;">${selectedTeam.name}</h1>
+                         <h3 style="margin-top: 0; color: #555;">${selectedTeam.city}</h3>
+                         <div style="margin: 20px 0;">
+                           <p><strong>Coach:</strong> ${selectedTeam.coach}</p>
+                           <p><strong>Contact:</strong> ${selectedTeam.contactNumber}</p>
+                         </div>
+                         <div style="text-align: left; background: #eee; padding: 10px; margin-bottom: 20px;">
+                           <h4 style="margin: 0 0 10px 0;">Team Roster</h4>
+                           <ul style="margin: 0; padding-left: 20px;">
+                             ${selectedTeam.players.map(p => `<li>${p.name} (${p.role})</li>`).join('')}
+                           </ul>
+                         </div>
+                         <p style="font-size: 12px; font-weight: bold; margin:0;">OFFICIAL TEAM PASS</p>
+                         <p style="font-size: 10px; color: #999; margin-top:5px;">${selectedTeam.id}</p>
+                       </div>
+                     `;
+                     printHtml(`Print Club Pass - ${selectedTeam.name}`, printContent);
+                   }}
                    className="py-2.5 px-4 bg-orange-500 hover:bg-orange-600 text-slate-950 font-black rounded-lg text-xs flex items-center gap-2 cursor-pointer shadow-lg shadow-orange-500/20"
                  >
                    <Trophy className="w-4 h-4" /> Print Official Pass

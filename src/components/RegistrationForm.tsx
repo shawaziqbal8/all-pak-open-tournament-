@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { triggerPushNotification } from '../utils/push';
+import { printHtml } from '../utils/print';
 import { Team, Player, PaymentStatus, PaymentDetails } from '../types';
 import { TOURNAMENT_DETAILS } from '../data';
 import { User, Phone, MapPin, Plus, Trash2, CreditCard, ShieldCheck, CheckCircle2, Ticket, Printer, Award } from 'lucide-react';
@@ -71,20 +72,7 @@ export default function RegistrationForm({ teams, onRegisterTeam, triggerNotific
       </div>
     `;
 
-    const printWindow = window.open('', '', 'width=600,height=600');
-    if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Print Club Pass - ${team.name}</title>
-          </head>
-          <body onload="window.print(); window.close();">
-            ${printContent}
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-    }
+    printHtml(`Print Club Pass - ${team.name}`, printContent);
   };
 
   // Add athlete row
