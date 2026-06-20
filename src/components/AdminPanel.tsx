@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { Match, Team, RoundType, MatchStatus, TournamentStats } from '../types';
 import { Settings, Check, UserCheck, ShieldAlert, Award, Calendar, RefreshCw, Plus, CreditCard, Send, Megaphone } from 'lucide-react';
 import MatchInsights from './MatchInsights';
+import { compressImage } from '../lib/imageUtils';
 
 interface AdminPanelProps {
   matches: Match[];
@@ -51,21 +52,34 @@ export default function AdminPanel({
   const [adMediaUrl, setAdMediaUrl] = useState(stats.featuredAdvertisementMediaUrl || '');
   const [adMediaType, setAdMediaType] = useState<'image'|'video'|'none'>(stats.featuredAdvertisementMediaType || 'none');
 
-  const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert("File is too large! Please select a file smaller than 10MB to sync securely.");
-      return;
+    if (file.type.startsWith('video/')) {
+        if (file.size > 800 * 1024) {
+            alert("Video file is too large! In a Firestore-based setup, documents cannot exceed 1MB. Please use an external video URL or a video under 800KB.");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setAdMediaUrl(reader.result as string);
+            setAdMediaType('video');
+        };
+        reader.readAsDataURL(file);
+    } else {
+        if (file.size > 10 * 1024 * 1024) {
+            alert("File is too large! Please select a file smaller than 10MB to compress.");
+            return;
+        }
+        try {
+            const compressedBase64 = await compressImage(file, 1200, 1200, 0.7);
+            setAdMediaUrl(compressedBase64);
+            setAdMediaType('image');
+        } catch (err) {
+            console.error("Failed to compress advertisement image", err);
+        }
     }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAdMediaUrl(reader.result as string);
-      setAdMediaType(file.type.startsWith('video/') ? 'video' : 'image');
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleAdminVerify = async (e: React.FormEvent) => {

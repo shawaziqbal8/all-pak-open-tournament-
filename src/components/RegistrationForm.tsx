@@ -22,7 +22,6 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
   const [coach, setCoach] = useState('');
   const [contact, setContact] = useState('');
   const [primaryColor, setPrimaryColor] = useState('emerald');
-  const [logoUrl, setLogoUrl] = useState<string | undefined>();
 
   // Player roster
   const [players, setPlayers] = useState<Player[]>([
@@ -34,7 +33,6 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
   const [accountName, setAccountName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [transactionId, setTransactionId] = useState('');
-  const [receiptUrl, setReceiptUrl] = useState<string | undefined>();
   const [cardNo, setCardNo] = useState('');
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCvc, setCardCvc] = useState('');
@@ -73,13 +71,6 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
     setPlayers(next);
   };
 
-  // Edit athlete photo
-  const handlePlayerPhotoChange = (idx: number, base64: string) => {
-    const next = [...players];
-    next[idx].photoUrl = base64;
-    setPlayers(next);
-  };
-
   // Step 1 Validation
   const handleNextStep2 = (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,19 +79,6 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
       return;
     }
     setStep(2);
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, callback: (base64: string) => void) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          callback(event.target.result.toString());
-        }
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   // Step 2 Validation
@@ -147,10 +125,6 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
         amount: TOURNAMENT_DETAILS.entryFee,
         timestamp: new Date().toLocaleString()
       };
-      
-      if (receiptUrl) {
-          finalDetails.receiptUrl = receiptUrl;
-      }
 
       const newTeam: Team = {
         id: `t_user_${Date.now()}`,
@@ -170,10 +144,6 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
         setsLost: 0,
         points: 0
       };
-
-      if (logoUrl) {
-        newTeam.logoUrl = logoUrl;
-      }
 
       // Set Receipt Info
       setReceiptData({
@@ -303,23 +273,6 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black uppercase tracking-wider text-orange-450 block">Team Logo Upload (Optional)</label>
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e, setLogoUrl)}
-                    className="w-full px-4 py-2 text-xs bg-slate-950 border border-slate-800 text-slate-300 rounded-xl focus:ring-1 focus:ring-orange-500 outline-none file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-orange-500 file:text-slate-950 hover:file:bg-orange-600"
-                  />
-                  {logoUrl && (
-                    <div className="mt-2 w-12 h-12 rounded bg-slate-900 border border-slate-800 overflow-hidden flex items-center justify-center">
-                      <img src={logoUrl} alt="Logo Preview" className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                </div>
-              </div>
-
               <div className="space-y-2">
                 <label className="text-[9px] font-black uppercase tracking-wider text-orange-450 block">Select Team Jersey Primary Color Theme</label>
                 <div className="flex gap-4 bg-slate-950 p-2.5 rounded-2xl border border-slate-800 w-fit">
@@ -391,21 +344,6 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
                       <option value="Blocker">Blocker (Wall Specialist)</option>
                       <option value="All-Rounder">All-Rounder</option>
                     </select>
-
-                    <div className="flex items-center gap-2">
-                       <input
-                         type="file"
-                         accept="image/*"
-                         title="Upload Player Photo"
-                         onChange={(e) => handleImageUpload(e, (b64) => handlePlayerPhotoChange(index, b64))}
-                         className="w-full text-[9px] file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[9px] file:bg-slate-800 file:text-slate-300 hover:file:bg-slate-700 text-slate-400"
-                       />
-                       {plyr.photoUrl && (
-                         <div className="w-8 h-8 shrink-0 rounded bg-slate-800 overflow-hidden">
-                           <img src={plyr.photoUrl} alt="Preview" className="w-full h-full object-cover" />
-                         </div>
-                       )}
-                    </div>
                   </div>
 
                   <button
@@ -601,24 +539,6 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
                       value={transactionId}
                       onChange={(e) => setTransactionId(e.target.value)}
                     />
-                  </div>
-
-                  <div className="space-y-1.5 md:col-span-2">
-                    <label className="text-[9px] font-black uppercase tracking-wider text-orange-450 block">Payment Screenshot Upload (Required for verification)</label>
-                    <div className="relative">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        required
-                        onChange={(e) => handleImageUpload(e, setReceiptUrl)}
-                        className="w-full px-4 py-2.5 text-xs bg-slate-950 border border-slate-800 text-slate-300 rounded-xl focus:ring-1 focus:ring-orange-500 outline-none file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-orange-500 file:text-slate-950 hover:file:bg-orange-600"
-                      />
-                      {receiptUrl && (
-                        <div className="mt-3 w-full h-32 rounded-xl bg-slate-900 border border-slate-800 overflow-hidden flex items-center justify-center">
-                          <img src={receiptUrl} alt="Receipt Preview" className="w-full h-full object-contain" />
-                        </div>
-                      )}
-                    </div>
                   </div>
               </div>
             )}

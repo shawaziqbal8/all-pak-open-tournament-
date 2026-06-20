@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Team, Match, NotificationItem, TournamentStats } from './types';
 import { TOURNAMENT_DETAILS } from './data';
 import { useFirebaseData } from './hooks/useFirebaseData';
@@ -24,6 +24,52 @@ export default function App() {
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
   const { teams, matches, notifications, stats, isLoaded, addTeam, updateTeam, removeTeam, addMatch, updateMatch, addNotification, updateStats } = useFirebaseData();
+
+  const prevNotificationsRef = useRef<NotificationItem[]>([]);
+
+  useEffect(() => {
+    // Request permission on first click anywhere in the app to comply with browser policies
+    const handleFirstInteraction = () => {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        if (Notification.permission === 'default') {
+          Notification.requestPermission();
+        }
+      }
+      window.removeEventListener('click', handleFirstInteraction);
+    };
+
+    window.addEventListener('click', handleFirstInteraction);
+    return () => window.removeEventListener('click', handleFirstInteraction);
+  }, []);
+
+  useEffect(() => {
+    // Only fire notifications if data has loaded and we have prior state
+    // to avoid firing all notifications at once on initial load.
+    if (!isLoaded || prevNotificationsRef.current.length === 0) {
+       prevNotificationsRef.current = notifications;
+       return;
+    }
+    
+    if (notifications.length > prevNotificationsRef.current.length) {
+       // Assuming newer notifications are either prepended or appended, 
+       // but in Firebase they are fetched and we can find the ones not in prev.
+       const newItems = notifications.filter(n => !prevNotificationsRef.current.find(pn => pn.id === n.id));
+       
+       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+         newItems.forEach(item => {
+           // Provide a small delay between multiple notifications just in case
+           setTimeout(() => {
+             new Notification(item.title, {
+               body: item.message,
+               icon: '/favicon.ico' // fallback to standard icon
+             });
+           }, 200);
+         });
+       }
+    }
+    
+    prevNotificationsRef.current = notifications;
+  }, [notifications, isLoaded]);
 
   if (!isLoaded) {
     return <div className="min-h-screen bg-slate-950 flex items-center justify-center text-orange-500 font-bold text-sm">Loading Tournament Setup...</div>;
@@ -165,6 +211,7 @@ export default function App() {
   // Add Custom scheduler slot compiled
   const handleAddCustomMatch = (newMatch: Match) => {
     addMatch(newMatch);
+    handleTriggerNotification('New Match Scheduled', `Match scheduled for ${newMatch.time}`, 'push');
   };
 
   // Register New Club from the step checkout wizard
@@ -177,6 +224,8 @@ export default function App() {
       totalTeams: stats.totalTeams + 1,
       // Total funds are only updated when verified by admin now!
     });
+    
+    handleTriggerNotification('New Team Registration', `Welcome ${newTeam.name} to the tournament!`, 'push');
   };
 
   // Dynamic system-wide trigger for push & emails dispatcher alerts
