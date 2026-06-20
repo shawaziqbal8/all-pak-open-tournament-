@@ -4,10 +4,21 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import webpush from "web-push";
+
+// Hardcoded VAPID keys for simplicity in this MVP
+const publicVapidKey = "BK8Xhgs-WxFrSRom-LddpAb3DIBzIYqhjj0RAfqBZX3lqRXAAIc8eY4RxfCJhJtKWmS8ex62TzGiqMZpERWx8fs";
+const privateVapidKey = "0cC1Cazl01vTzwE-bT9X7tHTyUYaEhS0lE5n7GVubFU";
+
+webpush.setVapidDetails(
+  "mailto:shawaziqbal8@gmail.com",
+  publicVapidKey,
+  privateVapidKey
+);
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT || 3000;
   const httpServer = createServer(app);
   const io = new Server(httpServer, {
     cors: {
@@ -71,6 +82,29 @@ async function startServer() {
     } catch (error: any) {
       console.error(error);
       res.status(500).json({ success: false, error: error.message || "Failed to fetch AI insights" });
+    }
+  });
+
+  // API Route for Web Push
+  app.get("/api/vapid-public-key", (req, res) => {
+    res.json({ publicKey: publicVapidKey });
+  });
+
+  app.post("/api/webpush", async (req, res) => {
+    const { payload, subscriptions } = req.body;
+    if (!subscriptions || !Array.isArray(subscriptions)) {
+      return res.status(400).json({ success: false, error: "Invalid subscriptions array" });
+    }
+
+    try {
+      const promises = subscriptions.map(sub => 
+        webpush.sendNotification(sub, JSON.stringify(payload)).catch(e => console.error("Push error:", e))
+      );
+      await Promise.all(promises);
+      res.json({ success: true, notified: subscriptions.length });
+    } catch (error: any) {
+      console.error("Error sending push:", error);
+      res.status(500).json({ success: false, error: error.message });
     }
   });
 

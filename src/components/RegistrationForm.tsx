@@ -4,16 +4,22 @@
  */
 
 import React, { useState } from 'react';
+import { triggerPushNotification } from '../utils/push';
 import { Team, Player, PaymentStatus, PaymentDetails } from '../types';
 import { TOURNAMENT_DETAILS } from '../data';
-import { User, Phone, MapPin, Plus, Trash2, CreditCard, ShieldCheck, CheckCircle2, Ticket, Printer } from 'lucide-react';
+import { User, Phone, MapPin, Plus, Trash2, CreditCard, ShieldCheck, CheckCircle2, Ticket, Printer, Award } from 'lucide-react';
 
 interface RegistrationFormProps {
+  teams: Team[];
   onRegisterTeam: (newTeam: Team) => void;
   triggerNotification: (title: string, message: string, type: 'push' | 'email', recipient: string) => void;
 }
 
-export default function RegistrationForm({ onRegisterTeam, triggerNotification }: RegistrationFormProps) {
+export default function RegistrationForm({ teams, onRegisterTeam, triggerNotification }: RegistrationFormProps) {
+  const [view, setView] = useState<'options' | 'register' | 'status'>('options');
+  const [searchPhone, setSearchPhone] = useState('');
+  const [searchedTeams, setSearchedTeams] = useState<Team[] | null>(null);
+
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
   // Form states
@@ -39,6 +45,47 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
   
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [receiptData, setReceiptData] = useState<any>(null);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchPhone) return;
+    const found = teams.filter(t => t.contactNumber === searchPhone);
+    setSearchedTeams(found);
+  };
+
+  const handlePrint = (team: Team) => {
+    const printContent = `
+      <div style="font-family: sans-serif; padding: 20px; border: 2px dashed #000; width: 350px; text-align: center; margin: 0 auto;">
+         <h2 style="margin: 0 0 10px 0;">Tournament Club Pass</h2>
+         <p style="font-size: 14px; color: #555; margin: 0 0 20px 0;">Admit Team</p>
+         <h1 style="margin: 0 0 10px 0;">${team.name}</h1>
+         <h3 style="margin: 0 0 20px 0; color: #d97706;">${team.city}</h3>
+         <div style="text-align: left; background: #eee; padding: 10px; margin-bottom: 20px;">
+           <p style="margin: 5px 0;"><strong>Coach:</strong> ${team.coach}</p>
+           <p style="margin: 5px 0;"><strong>Contact:</strong> ${team.contactNumber}</p>
+           <p style="margin: 5px 0;"><strong>TID:</strong> ${team.paymentDetails?.transactionId}</p>
+           <p style="margin: 5px 0;"><strong>Players:</strong> ${team.players.length}</p>
+         </div>
+         <p style="font-size: 12px; font-weight: bold; margin:0;">VERIFIED CLUB</p>
+         <p style="font-size: 10px; color: #999; margin-top:5px;">${team.id}</p>
+      </div>
+    `;
+
+    const printWindow = window.open('', '', 'width=600,height=600');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Print Club Pass - ${team.name}</title>
+          </head>
+          <body onload="window.print(); window.close();">
+            ${printContent}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
 
   // Add athlete row
   const handleAddPlayer = () => {
@@ -162,10 +209,12 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
       // Trigger automatic simulated emails and push alerts
       triggerNotification(
         '🎉 Registration Successful!',
-        `Your club "${newTeam.name}" has registered for the International Open Volleyball Tournament! Bracket matches are compiling.`,
+        `Your club "${newTeam.name}" has registered !`,
         'push',
         'All Participants'
       );
+
+      triggerPushNotification('New Club Registered!', `The club ${newTeam.name} has just registered for the tournament!`);
 
       triggerNotification(
         '🏆 Tournament Registration Entry Fee Paid',
@@ -179,7 +228,86 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
   };
 
   return (
-    <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-xl max-w-3xl mx-auto overflow-hidden text-slate-300" id="registration-portal-component">
+    <div className="space-y-6 max-w-4xl mx-auto py-8">
+      {view === 'options' && (
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div 
+              onClick={() => setView('register')}
+              className="bg-slate-900 border border-slate-800 rounded-2xl p-6 cursor-pointer hover:border-orange-500 hover:bg-slate-800 transition"
+            >
+              <Award className="w-12 h-12 text-orange-500 mb-4" />
+              <h3 className="text-xl font-bold text-white mb-2">Register Core Club</h3>
+              <p className="text-sm text-slate-400">Complete formal registration for your club in the upcoming tournament.</p>
+            </div>
+            
+            <div 
+              onClick={() => setView('status')}
+              className="bg-slate-900 border border-slate-800 rounded-2xl p-6 cursor-pointer hover:border-emerald-500 hover:bg-slate-800 transition"
+            >
+              <ShieldCheck className="w-12 h-12 text-emerald-500 mb-4" />
+              <h3 className="text-xl font-bold text-white mb-2">Check Status / Print Pass</h3>
+              <p className="text-sm text-slate-400">Already registered? Enter your phone number to check verification status and print your club pass.</p>
+            </div>
+         </div>
+      )}
+
+      {view === 'status' && (
+         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-slate-300">
+            <div className="flex justify-between items-center mb-6">
+               <h2 className="text-xl font-bold text-white">Find Your Club</h2>
+               <button onClick={() => setView('options')} className="text-sm font-semibold text-slate-400 hover:text-white">Back</button>
+            </div>
+
+            <form onSubmit={handleSearch} className="flex gap-2 max-w-sm mb-8">
+               <input
+                 type="text"
+                 placeholder="Enter Contact Number used for registration"
+                 value={searchPhone}
+                 onChange={e => setSearchPhone(e.target.value)}
+                 className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-sm text-white focus:ring-1 focus:ring-emerald-500 outline-none"
+               />
+               <button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold transition">Search</button>
+            </form>
+
+            {searchedTeams !== null && (
+               <div className="space-y-4">
+                  {searchedTeams.length === 0 ? (
+                    <div className="text-slate-400 text-sm">No club found for this number.</div>
+                  ) : (
+                    searchedTeams.map(t => (
+                       <div key={t.id} className="bg-slate-950 border border-slate-800 p-4 rounded-xl flex flex-col md:flex-row justify-between items-center gap-4">
+                          <div>
+                            <div className="text-white font-bold text-lg">{t.name} <span className="text-sm text-orange-400 ml-2">{t.city}</span></div>
+                            <div className="text-xs text-slate-500 mt-1">Reg Date: {t.registrationDate}</div>
+                          </div>
+                          
+                          <div className="flex items-center gap-4">
+                             <div className="flex items-center gap-1">
+                               {t.paymentStatus === 'paid' && <><CheckCircle2 className="w-5 h-5 text-emerald-500" /><span className="text-sm font-bold text-emerald-500">Verified</span></>}
+                               {t.paymentStatus === 'pending' && <><ShieldCheck className="w-5 h-5 text-amber-500" /><span className="text-sm font-bold text-amber-500">Pending Verification</span></>}
+                               {t.paymentStatus === 'unpaid' && <><Trash2 className="w-5 h-5 text-red-500" /><span className="text-sm font-bold text-red-500">Rejected</span></>}
+                             </div>
+
+                             {t.paymentStatus === 'paid' && (
+                                <button 
+                                  onClick={() => handlePrint(t)}
+                                  className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg font-bold text-sm transition"
+                                >
+                                   <Printer className="w-4 h-4" /> Print Club Pass
+                                </button>
+                             )}
+                          </div>
+                       </div>
+                    ))
+                  )}
+               </div>
+            )}
+         </div>
+      )}
+
+      {view === 'register' && (
+    <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-xl max-w-3xl mx-auto overflow-hidden text-slate-300 relative" id="registration-portal-component">
+       <button onClick={() => setView('options')} className="absolute top-4 right-4 z-10 text-xs font-semibold text-slate-400 hover:text-white bg-slate-800 px-3 py-1 rounded-lg">Cancel Form</button>
       
       {/* Visual Step Indicator Tracker */}
       <div className="bg-slate-950 border-b border-slate-850 px-6 py-4 flex items-center justify-between">
@@ -638,6 +766,9 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
                   setContact('');
                   setPlayers([{ id: 'p_init_1', name: '', role: 'Captain' }]);
                   setStep(1);
+                  setView('status');
+                  setSearchPhone(contact);
+                  setSearchedTeams(null);
                 }}
                 className="py-2 px-5 border border-slate-800 text-slate-400 font-black rounded-xl text-xs cursor-pointer transition-all hover:bg-slate-800 hover:text-white"
               >
@@ -650,5 +781,7 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
       </div>
 
     </div>
+    )}
+  </div>
   );
 }

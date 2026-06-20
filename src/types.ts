@@ -78,6 +78,17 @@ export interface NotificationItem {
   sent: boolean;
 }
 
+export interface SpectatorTicket {
+  id: string;
+  name: string;
+  contactNumber: string;
+  category: '100' | '200' | '300';
+  facilities: string;
+  paymentStatus: PaymentStatus;
+  paymentDetails: PaymentDetails;
+  registrationDate: string;
+}
+
 export interface TournamentStats {
   totalTeams: number;
   completedMatches: number;

@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { collection, onSnapshot, setDoc, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Team, Match, NotificationItem, TournamentStats } from '../types';
+import { Team, Match, NotificationItem, TournamentStats, SpectatorTicket } from '../types';
 import { INITIAL_STATS } from '../data';
 import { io, Socket } from 'socket.io-client';
 
@@ -9,6 +9,7 @@ export function useFirebaseData() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [tickets, setTickets] = useState<SpectatorTicket[]>([]);
   const [stats, setStats] = useState<TournamentStats>(INITIAL_STATS);
   const [isLoaded, setIsLoaded] = useState(false);
   const socketRef = useRef<Socket | null>(null);
@@ -50,6 +51,13 @@ export function useFirebaseData() {
          });
       } else if (data.type === 'update_stats') {
          setStats(prev => ({ ...prev, ...data.stats }));
+      } else if (data.type === 'add_ticket') {
+         setTickets(prev => {
+            if (!prev.find(t => t.id === data.ticket.id)) return [...prev, data.ticket];
+            return prev;
+         });
+      } else if (data.type === 'update_ticket') {
+         setTickets(prev => prev.map(t => t.id === data.ticketId ? { ...t, ...data.updates } : t));
       }
     });
 
@@ -80,6 +88,12 @@ export function useFirebaseData() {
       // Sort by timestamp or natural desc order
       data.sort((a,b) => b.id.localeCompare(a.id)); 
       setNotifications(data);
+    }));
+
+    unsubs.push(onSnapshot(collection(db, 'tickets'), (snapshot) => {
+      const data: SpectatorTicket[] = [];
+      snapshot.forEach(doc => data.push({ id: doc.id, ...doc.data() } as SpectatorTicket));
+      setTickets(data);
     }));
 
     unsubs.push(onSnapshot(doc(db, 'stats', 'global'), (docSnap) => {
@@ -148,10 +162,26 @@ export function useFirebaseData() {
     }); // Optimistic
     await setDoc(doc(db, 'notifications', n.id), n);
   };
+  
+  const addTicket = async (t: SpectatorTicket) => {
+    socketRef.current?.emit('live_update', { type: 'add_ticket', ticket: t });
+    setTickets(prev => {
+       if (!prev.find(ticket => ticket.id === t.id)) return [...prev, t];
+       return prev;
+    }); // Optimistic
+    await setDoc(doc(db, 'tickets', t.id), t);
+  };
+  
+  const updateTicket = async (ticketId: string, updates: Partial<SpectatorTicket>) => {
+    socketRef.current?.emit('live_update', { type: 'update_ticket', ticketId, updates });
+    setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, ...updates } : t)); // Optimistic
+    await updateDoc(doc(db, 'tickets', ticketId), updates);
+  };
+
   const clearNotifications = async () => {
     // since we cannot delete collection directly from client, we ignore it or just keep them locally.
     // For simplicity, we might just not implement clear, or do a batch delete.
   };
 
-  return { teams, matches, notifications, stats, isLoaded, addTeam, updateTeam, removeTeam, addMatch, updateMatch, addNotification, updateStats };
+  return { teams, matches, notifications, tickets, stats, isLoaded, addTeam, updateTeam, removeTeam, addMatch, updateMatch, addNotification, updateStats, addTicket, updateTicket };
 }

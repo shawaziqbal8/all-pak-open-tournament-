@@ -14,16 +14,18 @@ import LiveBrackets from './components/LiveBrackets';
 import RegistrationForm from './components/RegistrationForm';
 import NotificationsCenter from './components/NotificationsCenter';
 import AdminPanel from './components/AdminPanel';
+import TicketPortal from './components/TicketPortal';
 import InfoModal from './components/InfoModal';
+import NotificationSetup from './components/NotificationSetup';
 
-import { Trophy, Activity, BadgePercent, Bell, Settings, Award, Users, Info, Flame, ShieldAlert, Award as MedalIcon, Sun, Moon } from 'lucide-react';
+import { Trophy, Activity, BadgePercent, Bell, Settings, Award, Users, Info, Flame, ShieldAlert, Award as MedalIcon, Sun, Moon, Ticket } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'standings' | 'live' | 'register' | 'comms' | 'admin'>('standings');
+  const [activeTab, setActiveTab] = useState<'standings' | 'live' | 'register' | 'comms' | 'admin' | 'tickets'>('standings');
   const [isLightMode, setIsLightMode] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
-  const { teams, matches, notifications, stats, isLoaded, addTeam, updateTeam, removeTeam, addMatch, updateMatch, addNotification, updateStats } = useFirebaseData();
+  const { teams, matches, notifications, tickets, stats, isLoaded, addTeam, updateTeam, removeTeam, addMatch, updateMatch, addNotification, updateStats, addTicket, updateTicket } = useFirebaseData();
 
   const prevNotificationsRef = useRef<NotificationItem[]>([]);
 
@@ -277,6 +279,7 @@ export default function App() {
                 { id: 'standings', label: 'Standings', icon: Trophy },
                 { id: 'live', label: 'Live Court', icon: Activity, badge: stats.activeMatches > 0 },
                 { id: 'register', label: 'Register Team', icon: Award },
+                { id: 'tickets', label: 'Tickets', icon: Ticket },
                 { id: 'comms', label: 'Inbox & Alerts', icon: Bell },
                 { id: 'admin', label: 'Admin Room', icon: Settings }
               ].map((tb) => {
@@ -349,8 +352,19 @@ export default function App() {
 
           {activeTab === 'register' && (
             <RegistrationForm 
+              teams={teams}
               onRegisterTeam={handleRegisterTeam}
               triggerNotification={handleTriggerNotification}
+            />
+          )}
+
+          {activeTab === 'tickets' && (
+            <TicketPortal 
+              tickets={tickets} 
+              onRegisterTicket={(t) => {
+                 addTicket(t);
+                 handleTriggerNotification('New Ticket Bought', `${t.name} requested a Rs ${t.category} ticket!`, 'push');
+              }} 
             />
           )}
 
@@ -366,9 +380,11 @@ export default function App() {
             <AdminPanel 
               matches={matches}
               teams={teams}
+              tickets={tickets}
               stats={stats}
               updateStats={updateStats}
               updateTeam={updateTeam}
+              updateTicket={updateTicket}
               removeTeam={removeTeam}
               onUpdateMatchAll={handleUpdateMatchAll}
               onUpdateTeamPayment={handleUpdateTeamPayment}
@@ -378,6 +394,8 @@ export default function App() {
           )}
 
         </div>
+
+        <NotificationSetup />
 
       </main>
 

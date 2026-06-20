@@ -4,8 +4,8 @@
  */
 
 import React, { useState } from 'react';
-import { Match, Team, RoundType, MatchStatus, TournamentStats } from '../types';
-import { Settings, Check, UserCheck, ShieldAlert, Award, Calendar, RefreshCw, Plus, CreditCard, Send, Megaphone } from 'lucide-react';
+import { Match, Team, RoundType, MatchStatus, TournamentStats, SpectatorTicket } from '../types';
+import { Settings, Check, UserCheck, ShieldAlert, Award, Calendar, RefreshCw, Plus, CreditCard, Send, Megaphone, Ticket } from 'lucide-react';
 import MatchInsights from './MatchInsights';
 import { compressImage } from '../lib/imageUtils';
 
@@ -13,8 +13,10 @@ interface AdminPanelProps {
   matches: Match[];
   teams: Team[];
   stats: TournamentStats;
+  tickets: SpectatorTicket[];
   updateStats: (newStats: TournamentStats) => void;
   updateTeam: (teamId: string, updates: Partial<Team>) => void;
+  updateTicket: (ticketId: string, updates: Partial<SpectatorTicket>) => void;
   removeTeam: (teamId: string) => void;
   onUpdateMatchAll: (matchId: string, updatedParams: Partial<Match>) => void;
   onUpdateTeamPayment: (teamId: string, status: 'paid' | 'pending' | 'unpaid') => void;
@@ -26,8 +28,10 @@ export default function AdminPanel({
   matches,
   teams,
   stats,
+  tickets,
   updateStats,
   updateTeam,
+  updateTicket,
   removeTeam,
   onUpdateMatchAll,
   onUpdateTeamPayment,
@@ -45,6 +49,7 @@ export default function AdminPanel({
   const [time, setTime] = useState('');
   const [court, setCourt] = useState('Court A - Khursheed Khan Ground');
   const [verifyingTeam, setVerifyingTeam] = useState<Team | null>(null);
+  const [verifyingTicket, setVerifyingTicket] = useState<SpectatorTicket | null>(null);
 
   // Advertisement form
   const [adMessage, setAdMessage] = useState(stats.featuredAdvertisement || '');
@@ -569,6 +574,33 @@ export default function AdminPanel({
                 </div>
               </div>
 
+              {/* Verified Tickets */}
+              <div className="bg-slate-950 rounded-xl border border-slate-850 p-4 space-y-3">
+                <h4 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-1">
+                  <Ticket className="w-4 h-4 text-emerald-500" />
+                  Ticket Verification
+                </h4>
+                
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                  {tickets.map((t) => (
+                    <div key={`adm-tick-${t.id}`} className="flex items-center justify-between text-xs bg-slate-900 border border-slate-850 p-3 rounded-lg hover:border-slate-700 transition-colors">
+                      <div className="min-w-0 flex-1 mr-2">
+                        <span className="font-bold text-white block truncate text-sm">{t.name}</span>
+                        <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider block">Phone: {t.contactNumber} • Rs {t.category}</span>
+                      </div>
+
+                      <button
+                        onClick={() => setVerifyingTicket(t)}
+                        className={`text-[9px] font-black px-3 py-1.5 border rounded-lg cursor-pointer transition-all shrink-0 flex items-center gap-1.5 ${t.paymentStatus === 'paid' ? 'bg-emerald-500 text-slate-950 border-emerald-500/15' : 'bg-slate-800 text-white border-slate-700 hover:bg-slate-700'}`}
+                      >
+                        <Settings className="w-3.5 h-3.5" />
+                        {t.paymentStatus === 'paid' ? 'Manage' : 'Manage / Verify'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
             </div>
 
           </div>
@@ -710,6 +742,84 @@ export default function AdminPanel({
                   className={`px-4 py-2 rounded-lg text-sm font-black transition-colors ${verifyingTeam.paymentStatus === 'paid' ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-orange-500 hover:bg-orange-600 text-slate-950'}`}
                 >
                   {verifyingTeam.paymentStatus === 'paid' ? 'Revoke Verification' : 'Approve & Mark Paid'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Verification Modal for tickets */}
+      {verifyingTicket && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 text-slate-300">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl overflow-hidden flex flex-col shadow-2xl">
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-850">
+              <h2 className="text-lg font-black text-white flex items-center gap-2">
+                <Ticket className="w-5 h-5 text-emerald-500" /> Ticket Verification
+              </h2>
+              <button 
+                onClick={() => setVerifyingTicket(null)}
+                className="text-slate-500 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              
+              <div className="bg-slate-950 rounded-xl border border-slate-800 p-4 space-y-3">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="block text-[10px] text-slate-500 uppercase font-bold">Spectator Name</span>
+                    <span className="text-white font-medium">{verifyingTicket.name}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-500 uppercase font-bold">Contact Number</span>
+                    <span className="text-white font-medium">{verifyingTicket.contactNumber}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-500 uppercase font-bold">Category</span>
+                    <span className="text-emerald-400 font-mono font-bold">Rs. {verifyingTicket.category}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-500 uppercase font-bold">Facilities</span>
+                    <span className="text-white">{verifyingTicket.facilities}</span>
+                  </div>
+                  <div>
+                     <span className="block text-[10px] text-slate-500 uppercase font-bold">Method</span>
+                     <span className="text-white font-medium">{verifyingTicket.paymentDetails?.method || 'N/A'}</span>
+                   </div>
+                  <div>
+                    <span className="block text-[10px] text-slate-500 uppercase font-bold">Account Name</span>
+                    <span className="text-white">{verifyingTicket.paymentDetails?.accountName || 'N/A'}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="block text-[10px] text-slate-500 uppercase font-bold">Transaction ID</span>
+                    <span className="text-white font-mono">{verifyingTicket.paymentDetails?.transactionId || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                <button
+                  onClick={() => setVerifyingTicket(null)}
+                  className="px-4 py-2 rounded-lg text-sm font-bold text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    const nextStatus = verifyingTicket.paymentStatus === 'paid' ? 'pending' : 'paid';
+                    updateTicket(verifyingTicket.id, { paymentStatus: nextStatus });
+                    onSendSimulationAlert(
+                      '🎟️ Ticket Verified',
+                      `Simulated Alert: Ticket status for "${verifyingTicket.name}" has been marked to: ${nextStatus.toUpperCase()} by Administrator.`,
+                      'push'
+                    );
+                    setVerifyingTicket(null);
+                  }}
+                  className={`px-4 py-2 rounded-lg text-sm font-black transition-colors ${verifyingTicket.paymentStatus === 'paid' ? 'bg-amber-500 hover:bg-amber-600 text-amber-950' : 'bg-emerald-500 hover:bg-emerald-600 text-emerald-950'}`}
+                >
+                  {verifyingTicket.paymentStatus === 'paid' ? 'Revoke Verification' : 'Approve & Mark Paid'}
                 </button>
               </div>
             </div>
