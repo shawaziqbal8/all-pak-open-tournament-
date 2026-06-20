@@ -279,6 +279,30 @@ export default function LiveBrackets({ matches: rawMatches, teams, updateMatchSc
                   Prev Sets: {liveMatch.setScores.map((s, i) => `[S${i+1}: ${s.teamA}-${s.teamB}]`).join(' ')}
                 </div>
               )}
+              
+              {/* Win Probability Bar */}
+              <div className="mt-4 w-full">
+                <div className="flex justify-between text-[9px] uppercase tracking-wider font-bold mb-1.5 text-slate-400">
+                  <span>Win Prob</span>
+                  <span>{(() => {
+                    const diff = liveMatch.currentSetPoints.teamA - liveMatch.currentSetPoints.teamB;
+                    let probA = 50 + (diff * 4);
+                    if (probA > 95) probA = 95;
+                    if (probA < 5) probA = 5;
+                    return `${probA}% - ${100 - probA}%`;
+                  })()}</span>
+                </div>
+                <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-slate-800">
+                  <div 
+                    className="h-full transition-all duration-500 bg-white"
+                    style={{ width: `${Math.max(5, Math.min(95, 50 + (liveMatch.currentSetPoints.teamA - liveMatch.currentSetPoints.teamB) * 4))}%` }}
+                  />
+                  <div 
+                    className="h-full transition-all duration-500 bg-orange-500"
+                    style={{ width: `${100 - Math.max(5, Math.min(95, 50 + (liveMatch.currentSetPoints.teamA - liveMatch.currentSetPoints.teamB) * 4))}%` }}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Team B Profile */}

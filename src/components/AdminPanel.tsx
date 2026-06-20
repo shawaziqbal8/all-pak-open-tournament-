@@ -268,12 +268,26 @@ export default function AdminPanel({
               <p className="text-xs text-slate-400">Real-time match adjustment console and lineup verification tables.</p>
             </div>
 
-            <button
-              onClick={() => setIsAdminLoggedIn(false)}
-              className="py-1.5 px-3 border border-slate-800 rounded-lg text-xs text-slate-450 hover:bg-slate-850 hover:text-white cursor-pointer transition-all"
-            >
-              Lock Dashboard
-            </button>
+            <div className="flex gap-2">
+              {teams.length === 0 && (
+                <button
+                  onClick={async () => {
+                     const { seedInitialDatabaseData } = await import('../utils/seedData');
+                     seedInitialDatabaseData();
+                  }}
+                  className="py-1.5 px-3 bg-red-500/20 text-red-500 border border-red-500/30 font-bold rounded-lg text-xs hover:bg-red-500 hover:text-red-50 cursor-pointer transition-all flex items-center gap-1.5"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Seed Sample Data
+                </button>
+              )}
+              <button
+                onClick={() => setIsAdminLoggedIn(false)}
+                className="py-1.5 px-3 border border-slate-800 rounded-lg text-xs text-slate-450 hover:bg-slate-850 hover:text-white cursor-pointer transition-all"
+              >
+                Lock Dashboard
+              </button>
+            </div>
           </div>
 
           {/* Core Panel grid: Matches Modifiers and Add Match */}

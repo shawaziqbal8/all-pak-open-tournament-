@@ -18,7 +18,7 @@ webpush.setVapidDetails(
 
 async function startServer() {
   const app = express();
-  const PORT = process.env.PORT || 3000;
+  const PORT = parseInt(process.env.PORT || '3000', 10);
   const httpServer = createServer(app);
   const io = new Server(httpServer, {
     cors: {

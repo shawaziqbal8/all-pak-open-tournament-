@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { printHtml } from '../utils/print';
 import { Team, TournamentStats } from '../types';
 import { Search, Trophy, TrendingUp, Users, DollarSign, Activity, CheckCircle2, Download, X, Scale } from 'lucide-react';
+import TeamPerformanceModal from './TeamPerformanceModal';
 
 interface LeaderboardProps {
   teams: Team[];
@@ -19,6 +20,7 @@ export default function Leaderboard({ teams, stats }: LeaderboardProps) {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [showCompareModal, setShowCompareModal] = useState(false);
+  const [performanceTeam, setPerformanceTeam] = useState<Team | null>(null);
 
   // Only show verified paid teams on the public leaderboard
   const verifiedTeams = teams.filter(t => t.paymentStatus === 'paid');
@@ -239,7 +241,14 @@ export default function Leaderboard({ teams, stats }: LeaderboardProps) {
                            </span>
                         )}
                         <div>
-                          <p className="font-bold text-white flex items-center gap-1.5 group-hover:underline">
+                          <p 
+                            className="font-bold text-white flex items-center gap-1.5 group-hover:underline hover:text-orange-400 cursor-help"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPerformanceTeam(team);
+                            }}
+                            title="View Graphical Analytics"
+                          >
                             {team.name}
                             {team.id === 't7' && <span className="bg-orange-500/20 text-orange-400 border border-orange-500/30 font-semibold px-1 rounded-sm text-[8px] uppercase no-underline">Hosts</span>}
                           </p>
@@ -621,6 +630,12 @@ export default function Leaderboard({ teams, stats }: LeaderboardProps) {
           </div>
         </div>
       )}
+
+      {/* Performance Modal */}
+      <TeamPerformanceModal 
+        team={performanceTeam} 
+        onClose={() => setPerformanceTeam(null)} 
+      />
     </div>
   );
 }

@@ -17,11 +17,12 @@ import AdminPanel from './components/AdminPanel';
 import TicketPortal from './components/TicketPortal';
 import InfoModal from './components/InfoModal';
 import NotificationSetup from './components/NotificationSetup';
+import HistoryTab from './components/HistoryTab';
 
-import { Trophy, Activity, BadgePercent, Bell, Settings, Award, Users, Info, Flame, ShieldAlert, Award as MedalIcon, Sun, Moon, Ticket } from 'lucide-react';
+import { Trophy, Activity, BadgePercent, Bell, Settings, Award, Users, Info, Flame, ShieldAlert, Award as MedalIcon, Sun, Moon, Ticket, Archive } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'standings' | 'live' | 'register' | 'comms' | 'admin' | 'tickets'>('standings');
+  const [activeTab, setActiveTab] = useState<'standings' | 'live' | 'register' | 'comms' | 'admin' | 'tickets' | 'history'>('standings');
   const [isLightMode, setIsLightMode] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
 
@@ -213,7 +214,7 @@ export default function App() {
   // Add Custom scheduler slot compiled
   const handleAddCustomMatch = (newMatch: Match) => {
     addMatch(newMatch);
-    handleTriggerNotification('New Match Scheduled', `Match scheduled for ${newMatch.time}`, 'push');
+    handleTriggerNotification('New Match Scheduled', `Match scheduled for ${newMatch.scheduledTime}`, 'push');
   };
 
   // Register New Club from the step checkout wizard
@@ -280,6 +281,7 @@ export default function App() {
                 { id: 'live', label: 'Live Court', icon: Activity, badge: stats.activeMatches > 0 },
                 { id: 'register', label: 'Register Team', icon: Award },
                 { id: 'tickets', label: 'Tickets', icon: Ticket },
+                { id: 'history', label: 'History', icon: Archive },
                 { id: 'comms', label: 'Inbox & Alerts', icon: Bell },
                 { id: 'admin', label: 'Admin Room', icon: Settings }
               ].map((tb) => {
@@ -366,6 +368,10 @@ export default function App() {
                  handleTriggerNotification('New Ticket Bought', `${t.name} requested a Rs ${t.category} ticket!`, 'push');
               }} 
             />
+          )}
+
+          {activeTab === 'history' && (
+            <HistoryTab />
           )}
 
           {activeTab === 'comms' && (
