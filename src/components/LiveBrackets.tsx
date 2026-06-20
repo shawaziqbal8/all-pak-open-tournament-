@@ -59,7 +59,9 @@ const CountdownTimer = ({ targetDate }: { targetDate: Date }) => {
   );
 };
 
-export default function LiveBrackets({ matches, teams, updateMatchScore, triggerPushNotification }: LiveBracketsProps) {
+export default function LiveBrackets({ matches: rawMatches, teams, updateMatchScore, triggerPushNotification }: LiveBracketsProps) {
+  const matches = [...rawMatches].sort((a,b) => a.id.localeCompare(b.id));
+
   const [activeTab, setActiveTab] = useState<'round' | 'tree'>('round');
   const [activeRound, setActiveRound] = useState<'quarters' | 'semis' | 'finals'>('quarters');
   

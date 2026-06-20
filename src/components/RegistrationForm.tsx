@@ -30,7 +30,7 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
   ]);
 
   // Payment Gateway states
-  const [paymentMethod, setPaymentMethod] = useState<'JazzCash' | 'EasyPaisa' | 'Bank Transfer' | 'Card'>('JazzCash');
+  const [paymentMethod, setPaymentMethod] = useState<'Mobile Gateway' | 'Bank Transfer' | 'Card'>('Card');
   const [accountName, setAccountName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
   const [transactionId, setTransactionId] = useState('');
@@ -145,9 +145,12 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
         accountNumber: accountNumber || 'Mobile Gateway',
         transactionId: simulatedTId,
         amount: TOURNAMENT_DETAILS.entryFee,
-        timestamp: new Date().toLocaleString(),
-        receiptUrl
+        timestamp: new Date().toLocaleString()
       };
+      
+      if (receiptUrl) {
+          finalDetails.receiptUrl = receiptUrl;
+      }
 
       const newTeam: Team = {
         id: `t_user_${Date.now()}`,
@@ -161,13 +164,16 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
         paymentDetails: finalDetails,
         primaryColor,
         secondaryColor: 'slate',
-        logoUrl,
         won: 0,
         lost: 0,
         setsWon: 0,
         setsLost: 0,
         points: 0
       };
+
+      if (logoUrl) {
+        newTeam.logoUrl = logoUrl;
+      }
 
       // Set Receipt Info
       setReceiptData({
@@ -186,14 +192,14 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
       // Trigger automatic simulated emails and push alerts
       triggerNotification(
         '🎉 Registration Successful!',
-        `Your club "${newTeam.name}" has registered for the All Pakistan Open Volleyball Tournament! Bracket matches are compiling.`,
+        `Your club "${newTeam.name}" has registered for the International Open Volleyball Tournament! Bracket matches are compiling.`,
         'push',
         'All Participants'
       );
 
       triggerNotification(
         '🏆 Tournament Registration Entry Fee Paid',
-        `Dear ${coach}, we have verified your JazzCash/EasyPaisa gateway transaction: ${simulatedTId}. Your cash receipt code is ${simulatedTId} for entry at Khursheed Khan Ground!`,
+        `Dear ${coach}, we have verified your payment gateway transaction: ${simulatedTId}. Your cash receipt code is ${simulatedTId}!`,
         'email',
         `${coach.toLowerCase().replace(/\s+/g, '')}@gmail.com`
       );
@@ -444,100 +450,178 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
           <form onSubmit={handleProcessCheckout} className="space-y-6">
             <div>
               <h3 className="text-base font-black text-white mb-1">Step 3: Secure Tournament Fee Payment</h3>
-              <p className="text-xs text-slate-400 font-medium">All Pakistan Open entry fee is Rs. 5,000. Payment is securely processed via EasyPaisa.</p>
+              <p className="text-xs text-slate-400 font-medium">International Open entry fee is $20 (or Rs. 5,000). Payment can be processed globally via Card, or locally via Gateway.</p>
+            </div>
+
+            <div className="flex gap-2">
+              {['Card', 'Mobile Gateway', 'Bank Transfer'].map(method => (
+                <button
+                  key={method}
+                  type="button"
+                  onClick={() => setPaymentMethod(method as any)}
+                  className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-colors ${paymentMethod === method ? 'bg-orange-500/20 border-orange-500 text-orange-400' : 'bg-slate-900 border-slate-800 text-slate-500 hover:border-slate-700'}`}
+                >
+                  {method}
+                </button>
+              ))}
             </div>
 
             {/* Instruction Panel dynamically changed according to local wallets */}
-            <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-4 space-y-3 text-xs text-orange-400 font-medium">
-              <p className="font-black text-[13px] text-white">📱 Local Mobile Account Submission:</p>
-              <div className="space-y-1.5">
-                <p>Transfer Rs. 5,000 exactly to our Chief Organizer using the EasyPaisa details below:</p>
-                <div className="bg-slate-900/50 border border-slate-800 p-3 rounded-lg my-2 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-green-500/20 p-2 rounded-full">
-                      <strong className="text-green-500 font-black tracking-wider text-sm">easypaisa</strong>
-                    </div>
-                    <div>
-                      <p className="text-slate-400 text-xs font-bold">Shawaz Iqbal</p>
-                      <p className="text-white text-base font-mono font-black tracking-widest">03416000758</p>
+            {paymentMethod === 'Mobile Gateway' && (
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-4 space-y-3 text-xs text-orange-400 font-medium">
+                <p className="font-black text-[13px] text-white">📱 Local Mobile Account Submission:</p>
+                <div className="space-y-1.5">
+                  <p>Transfer Rs. 5,000 exactly to our Chief Organizer using the EasyPaisa details below:</p>
+                  <div className="bg-slate-900/50 border border-slate-800 p-3 rounded-lg my-2 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-green-500/20 p-2 rounded-full">
+                        <strong className="text-green-500 font-black tracking-wider text-sm">easypaisa</strong>
+                      </div>
+                      <div>
+                        <p className="text-slate-400 text-xs font-bold">Shawaz Iqbal</p>
+                        <p className="text-white text-base font-mono font-black tracking-widest">03416000758</p>
+                      </div>
                     </div>
                   </div>
                 </div>
+                <div className="bg-orange-500/20 p-2.5 rounded-lg border border-orange-500/30 text-white flex items-start gap-2">
+                  <span className="text-lg leading-none">⚠️</span>
+                  <p className="leading-relaxed">
+                    <strong className="font-black text-orange-400">CRITICAL NEXT STEP:</strong> You MUST share a screenshot of your successful transaction via WhatsApp to <strong className="font-black text-orange-400">03416000758</strong>. Only teams with a verified payment screenshot will be officially added to the tournament standings!
+                  </p>
+                </div>
+                <a 
+                  href="https://wa.me/923416000758" 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="mt-2 w-full py-2.5 bg-[#25D366] hover:bg-[#1ebd59] text-white font-black text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-green-900/20"
+                >
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.878-.788-1.472-1.761-1.645-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
+                  </svg>
+                  Send Payment Screenshot via WhatsApp
+                </a>
               </div>
-              <div className="bg-orange-500/20 p-2.5 rounded-lg border border-orange-500/30 text-white flex items-start gap-2">
-                <span className="text-lg leading-none">⚠️</span>
-                <p className="leading-relaxed">
-                  <strong className="font-black text-orange-400">CRITICAL NEXT STEP:</strong> You MUST share a screenshot of your successful transaction via WhatsApp to <strong className="font-black text-orange-400">03416000758</strong>. Only teams with a verified payment screenshot will be officially added to the tournament standings!
-                </p>
+            )}
+
+            {paymentMethod === 'Bank Transfer' && (
+              <div className="bg-orange-500/10 border border-orange-500/20 rounded-xl p-4 space-y-3 text-xs text-orange-400 font-medium">
+                <p className="font-black text-[13px] text-white">🏦 International / Local Bank Transfer:</p>
+                <div className="space-y-1.5">
+                  <p>Transfer $20 or Rs. 5,000 using the IBAN details below:</p>
+                  <div className="bg-slate-900/50 border border-slate-800 p-3 rounded-lg my-2">
+                    <p className="text-slate-400 text-xs font-bold">Bank Name: Standard Chartered</p>
+                    <p className="text-slate-400 text-xs font-bold">Account Name: Open Volleyball Tournament</p>
+                    <p className="text-white text-base font-mono font-black tracking-widest mt-1">PK34 SCBL 0000 000 1234 5678</p>
+                  </div>
+                </div>
               </div>
-              <a 
-                href="https://wa.me/923416000758" 
-                target="_blank" 
-                rel="noreferrer"
-                className="mt-2 w-full py-2.5 bg-[#25D366] hover:bg-[#1ebd59] text-white font-black text-xs rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-green-900/20"
-              >
-                <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.878-.788-1.472-1.761-1.645-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
-                </svg>
-                Send Payment Screenshot via WhatsApp
-              </a>
-            </div>
+            )}
 
             {/* Form Fields according to Payment Options */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-wider text-orange-450 block">Your Sender Account Name</label>
+            {paymentMethod === 'Card' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5 md:col-span-2">
+                  <label className="text-[9px] font-black uppercase tracking-wider text-orange-450 block">Name on Card</label>
                   <input
                     type="text"
                     required
-                    placeholder="Name displayed on account profile"
+                    placeholder="Full Name"
                     className="w-full px-4 py-2.5 text-xs bg-slate-950 border border-slate-800 text-white rounded-xl focus:ring-1 focus:ring-orange-500 outline-none"
                     value={accountName}
                     onChange={(e) => setAccountName(e.target.value)}
                   />
                 </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[9px] font-black uppercase tracking-wider text-orange-450 block">Sender Account Mobile # (Optional)</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 0345-XXXXXXX"
-                    className="w-full px-4 py-2.5 text-xs bg-slate-950 border border-slate-800 text-white rounded-xl focus:ring-1 focus:ring-orange-500 outline-none"
-                    value={accountNumber}
-                    onChange={(e) => setAccountNumber(e.target.value)}
-                  />
-                </div>
-
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-[9px] font-black uppercase tracking-wider text-orange-450 block">Gateway Transaction ID (TID)</label>
+                  <label className="text-[9px] font-black uppercase tracking-wider text-orange-450 block">Card Number</label>
                   <input
                     type="text"
                     required
-                    placeholder="11-digit mobile transaction receipt ID"
-                    className="w-full px-4 py-2.5 text-xs bg-slate-950 border border-slate-800 text-white rounded-xl focus:ring-1 focus:ring-orange-500 font-mono tracking-wider font-bold outline-none"
-                    value={transactionId}
-                    onChange={(e) => setTransactionId(e.target.value)}
+                    placeholder="0000 0000 0000 0000"
+                    className="w-full px-4 py-2.5 text-xs bg-slate-950 border border-slate-800 text-white rounded-xl focus:ring-1 focus:ring-orange-500 outline-none font-mono"
+                    value={cardNo}
+                    onChange={(e) => setCardNo(e.target.value)}
                   />
                 </div>
-
-                <div className="space-y-1.5 md:col-span-2">
-                  <label className="text-[9px] font-black uppercase tracking-wider text-orange-450 block">Payment Screenshot Upload (Required for verification)</label>
-                  <div className="relative">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      required
-                      onChange={(e) => handleImageUpload(e, setReceiptUrl)}
-                      className="w-full px-4 py-2.5 text-xs bg-slate-950 border border-slate-800 text-slate-300 rounded-xl focus:ring-1 focus:ring-orange-500 outline-none file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-orange-500 file:text-slate-950 hover:file:bg-orange-600"
-                    />
-                    {receiptUrl && (
-                      <div className="mt-3 w-full h-32 rounded-xl bg-slate-900 border border-slate-800 overflow-hidden flex items-center justify-center">
-                        <img src={receiptUrl} alt="Receipt Preview" className="w-full h-full object-contain" />
-                      </div>
-                    )}
-                  </div>
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase tracking-wider text-orange-450 block">Expiry Date</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="MM/YY"
+                    className="w-full px-4 py-2.5 text-xs bg-slate-950 border border-slate-800 text-white rounded-xl focus:ring-1 focus:ring-orange-500 outline-none font-mono"
+                    value={cardExpiry}
+                    onChange={(e) => setCardExpiry(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black uppercase tracking-wider text-orange-450 block">CVC</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="123"
+                    className="w-full px-4 py-2.5 text-xs bg-slate-950 border border-slate-800 text-white rounded-xl focus:ring-1 focus:ring-orange-500 outline-none font-mono"
+                    value={cardCvc}
+                    onChange={(e) => setCardCvc(e.target.value)}
+                  />
                 </div>
               </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-wider text-orange-450 block">Your Sender Account Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Name displayed on account profile"
+                      className="w-full px-4 py-2.5 text-xs bg-slate-950 border border-slate-800 text-white rounded-xl focus:ring-1 focus:ring-orange-500 outline-none"
+                      value={accountName}
+                      onChange={(e) => setAccountName(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-[9px] font-black uppercase tracking-wider text-orange-450 block">Sender Account Mobile / IBAN (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 0345-XXXXXXX or PKXX..."
+                      className="w-full px-4 py-2.5 text-xs bg-slate-950 border border-slate-800 text-white rounded-xl focus:ring-1 focus:ring-orange-500 outline-none"
+                      value={accountNumber}
+                      onChange={(e) => setAccountNumber(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5 md:col-span-2">
+                    <label className="text-[9px] font-black uppercase tracking-wider text-orange-450 block">Gateway Transaction ID (TID) / Reference No</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Transaction receipt ID"
+                      className="w-full px-4 py-2.5 text-xs bg-slate-950 border border-slate-800 text-white rounded-xl focus:ring-1 focus:ring-orange-500 font-mono tracking-wider font-bold outline-none"
+                      value={transactionId}
+                      onChange={(e) => setTransactionId(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5 md:col-span-2">
+                    <label className="text-[9px] font-black uppercase tracking-wider text-orange-450 block">Payment Screenshot Upload (Required for verification)</label>
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        required
+                        onChange={(e) => handleImageUpload(e, setReceiptUrl)}
+                        className="w-full px-4 py-2.5 text-xs bg-slate-950 border border-slate-800 text-slate-300 rounded-xl focus:ring-1 focus:ring-orange-500 outline-none file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-[10px] file:font-semibold file:bg-orange-500 file:text-slate-950 hover:file:bg-orange-600"
+                      />
+                      {receiptUrl && (
+                        <div className="mt-3 w-full h-32 rounded-xl bg-slate-900 border border-slate-800 overflow-hidden flex items-center justify-center">
+                          <img src={receiptUrl} alt="Receipt Preview" className="w-full h-full object-contain" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+              </div>
+            )}
 
             <div className="border-t border-slate-850 pt-5 flex items-center justify-between">
               <button
@@ -555,8 +639,8 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
               >
                 <ShieldCheck className="w-4 h-4 shrink-0" />
                 {isProcessingPayment 
-                  ? 'Verifying EasyPaisa transaction...' 
-                  : `Secure Payment [Rs. 5,000]`}
+                  ? 'Verifying Transaction...' 
+                  : `Secure Payment [$20 / Rs. 5,000]`}
               </button>
             </div>
           </form>
@@ -569,7 +653,7 @@ export default function RegistrationForm({ onRegisterTeam, triggerNotification }
               <CheckCircle2 className="w-16 h-16 text-yellow-500 shrink-0" />
               <h3 className="text-xl font-black text-white">Enrollment Pending Verification!</h3>
               <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
-                Your registration has been submitted but requires Admin Verification. You MUST send a screenshot of your EasyPaisa payment (Rs. {receiptData.amount}) to <strong className="text-amber-500 font-bold">03416000758</strong> on WhatsApp.
+                Your registration has been submitted but requires Admin Verification. If paying manually, you MUST send a screenshot of your payment (${receiptData.amount}) to <strong className="text-amber-500 font-bold">03416000758</strong> on WhatsApp.
               </p>
             </div>
 

@@ -53,6 +53,34 @@ export default function App() {
 
     if (status === 'completed' && winnerId) {
       handleCompleteMatchRankings(match.teamAId, match.teamBId, winnerId, setScores);
+      advanceBracketWinner(matchId, winnerId);
+    }
+  };
+
+  const advanceBracketWinner = (matchId: string, winnerId: string) => {
+    // Auto-advance logic for structured brackets (assuming indices 0-6 represent quarters -> semis -> finals)
+    const sortedMatches = [...matches].sort((a,b) => a.id.localeCompare(b.id));
+    const matchIndex = sortedMatches.findIndex(m => m.id === matchId);
+    
+    if (matchIndex >= 0 && matchIndex <= 3) {
+      // Quarter final completed, move to semi
+      const targetSemiIndex = 4 + Math.floor(matchIndex / 2);
+      if (targetSemiIndex < sortedMatches.length) {
+        const targetSemi = sortedMatches[targetSemiIndex];
+        const isTeamA = matchIndex % 2 === 0;
+        updateMatch(targetSemi.id, {
+          [isTeamA ? 'teamAId' : 'teamBId']: winnerId
+        });
+      }
+    } else if (matchIndex === 4 || matchIndex === 5) {
+      // Semi final completed, move to final
+      if (6 < sortedMatches.length) {
+        const targetFinal = sortedMatches[6];
+        const isTeamA = matchIndex === 4;
+        updateMatch(targetFinal.id, {
+          [isTeamA ? 'teamAId' : 'teamBId']: winnerId
+        });
+      }
     }
   };
 
@@ -112,6 +140,7 @@ export default function App() {
     // If completed manually from admin pane
     if (params.status === 'completed' && match.status !== 'completed' && params.winnerId) {
       handleCompleteMatchRankings(match.teamAId, match.teamBId, params.winnerId, params.setScores || match.setScores);
+      advanceBracketWinner(matchId, params.winnerId);
     }
   };
 

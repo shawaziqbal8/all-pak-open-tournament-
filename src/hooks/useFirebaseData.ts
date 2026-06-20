@@ -70,6 +70,7 @@ export function useFirebaseData() {
     unsubs.push(onSnapshot(collection(db, 'matches'), (snapshot) => {
       const data: Match[] = [];
       snapshot.forEach(doc => data.push({ id: doc.id, ...doc.data() } as Match));
+      data.sort((a,b) => a.id.localeCompare(b.id));
       setMatches(data);
     }));
 
