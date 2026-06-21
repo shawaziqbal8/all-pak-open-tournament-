@@ -284,6 +284,9 @@ export default function App() {
         {activeTab === 'register' && <RegistrationForm socket={socketRef.current} />}
         {activeTab === 'status' && <RegistrationStatus />}
         {activeTab === 'admin' && <AdminDashboard matches={matches} teams={teams} socket={socketRef.current} />}
+        <div className="mt-12">
+          <AdsManager />
+        </div>
       </main>
       
       <footer className="mt-12 py-6 border-t border-slate-800 flex flex-col items-center justify-center gap-4 text-center text-xs text-slate-500">

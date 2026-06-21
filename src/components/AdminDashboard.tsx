@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { MatchScore, TeamReg } from '../types';
 import { Socket } from 'socket.io-client';
 import { CheckCircle2, ChevronRight, MessageCircle, Send, ShieldAlert, XCircle, Plus, Calendar as CalendarIcon, Clock, Edit2, Lock, ImagePlus, MonitorPlay, Trash2, Upload, AlertTriangle, Download } from 'lucide-react';
-import { db } from '../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../lib/firebase';
 import { doc, updateDoc, setDoc, deleteDoc, collection, onSnapshot, getDocs } from 'firebase/firestore';
 import TeamDetailModal from './TeamDetailModal';
 
@@ -12,6 +13,7 @@ export interface AdImage {
   id: string;
   url: string;
   active: boolean;
+  type?: 'image' | 'video';
 }
 
 export default function AdminDashboard({ matches, teams, socket }: { matches: MatchScore[], teams: TeamReg[], socket: Socket | null }) {
@@ -71,42 +73,22 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
 
     setIsUploading(true);
     try {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const img = new Image();
-        img.onload = async () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          
-          if (width > 800) {
-            height = Math.round((height * 800) / width);
-            width = 800;
-          }
-          
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-          
-          try {
-            const id = 'ad_' + Date.now();
-            await setDoc(doc(db, 'ads', id), { url: dataUrl, active: true });
-          } catch(err) {
-            console.error(err);
-            alert('Failed to save ad to database.');
-          } finally {
-            setIsUploading(false);
-            if (e.target) e.target.value = '';
-          }
-        };
-        img.src = event.target?.result as string;
-      };
-      reader.readAsDataURL(file);
+      const fileRef = ref(storage, `ads/${Date.now()}_${file.name}`);
+      await uploadBytes(fileRef, file);
+      const downloadUrl = await getDownloadURL(fileRef);
+      
+      const id = 'ad_' + Date.now();
+      await setDoc(doc(db, 'ads', id), { 
+        url: downloadUrl, 
+        active: true,
+        type: file.type.startsWith('video/') ? 'video' : 'image'
+      });
+      
+      if (e.target) e.target.value = '';
     } catch(err) {
       console.error(err);
-      alert('Failed to process image.');
+      alert('Failed to process/upload media. Make sure Firebase Storage rules are public or use the URL option instead.');
+    } finally {
       setIsUploading(false);
     }
   };
@@ -419,13 +401,13 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
             <div>
               <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><ImagePlus className="w-5 h-5 text-orange-500" /> Upload Advertisements</h3>
-              <p className="text-sm text-slate-400">Upload an image file or add an image URL to display sponsor banners.</p>
+              <p className="text-sm text-slate-400">Upload an image or video file, or add an external URL to display sponsor banners.</p>
             </div>
             
             <div className="flex flex-col gap-4 w-full md:w-auto">
               <label className="bg-orange-600 hover:bg-orange-500 text-white font-bold px-6 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer w-full">
-                <Upload className="w-5 h-5" /> {isUploading ? 'Uploading...' : 'Upload Image'}
-                <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" disabled={isUploading} />
+                <Upload className="w-5 h-5" /> {isUploading ? 'Uploading...' : 'Upload Media'}
+                <input type="file" accept="image/*,video/*" onChange={handleFileUpload} className="hidden" disabled={isUploading} />
               </label>
 
               <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-widest justify-center">
@@ -434,11 +416,13 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
                 <div className="w-12 h-px bg-slate-800"></div>
               </div>
               
-              <form onSubmit={handleAddAd} className="flex gap-2 w-full">
-                <input type="url" value={newAdUrl} onChange={e => setNewAdUrl(e.target.value)} required placeholder="https://example.com/banner.jpg" className="flex-1 min-w-[250px] bg-slate-800 border border-slate-700 p-3 rounded-lg text-white focus:border-red-500 outline-none" />
-                <button type="submit" className="bg-slate-800 hover:bg-slate-700 text-white font-bold px-4 py-3 rounded-lg flex items-center justify-center transition-colors">
-                  <Plus className="w-5 h-5" />
-                </button>
+              <form onSubmit={handleAddAd} className="flex flex-col gap-2 w-full">
+                <div className="flex gap-2 w-full">
+                  <input type="url" value={newAdUrl} onChange={e => setNewAdUrl(e.target.value)} required placeholder="https://example.com/banner.mp4" className="flex-1 min-w-[250px] bg-slate-800 border border-slate-700 p-3 rounded-lg text-white focus:border-orange-500 outline-none" />
+                  <button type="submit" className="bg-slate-800 hover:bg-slate-700 text-white font-bold px-4 py-3 rounded-lg flex items-center justify-center transition-colors">
+                    <Plus className="w-5 h-5" />
+                  </button>
+                </div>
               </form>
             </div>
           </div>
@@ -447,11 +431,15 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
             {ads.map(ad => (
               <div key={ad.id} className={`border p-4 rounded-xl relative overflow-hidden bg-slate-900 ${ad.active ? 'border-orange-500/50' : 'border-slate-800 opacity-60'}`}>
                 <div className="aspect-video w-full bg-slate-950 rounded-lg overflow-hidden mb-4 border border-slate-800">
-                  <img src={ad.url} alt="Ad Banner" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.src = 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=500&h=300&fit=crop')} />
+                  {ad.type === 'video' || ad.url.match(/\.(mp4|webm|ogg)$/i) ? (
+                    <video src={ad.url} controls className="w-full h-full object-cover" />
+                  ) : (
+                    <img src={ad.url} alt="Ad Banner" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.src = 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=500&h=300&fit=crop')} />
+                  )}
                 </div>
                 <div className="flex justify-between items-center">
                   <label className="flex items-center gap-2 text-sm font-bold text-slate-300 cursor-pointer">
-                    <input type="checkbox" checked={ad.active} onChange={(e) => handleToggleAd(ad.id, e.target.checked)} className="w-4 h-4 rounded accent-red-500" />
+                    <input type="checkbox" checked={ad.active} onChange={(e) => handleToggleAd(ad.id, e.target.checked)} className="w-4 h-4 rounded accent-orange-500" />
                     {ad.active ? 'Live' : 'Hidden'}
                   </label>
                   <button onClick={() => handleDeleteAd(ad.id)} className="text-slate-500 hover:text-red-500 transition-colors p-2">
