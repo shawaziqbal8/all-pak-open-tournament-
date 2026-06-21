@@ -42,24 +42,19 @@ export default function Venue() {
         <div className="lg:col-span-3 h-[600px] rounded-xl overflow-hidden shadow-lg border border-slate-800 relative bg-slate-950">
           <APIProvider apiKey={API_KEY} version="weekly">
             <Map
-              defaultCenter={{ lat: 37.42, lng: -122.08 }}
+              defaultCenter={{ lat: 34.8732, lng: 72.8601 }} // Bisham, Shangla Approx
               defaultZoom={15}
               mapId="TOURNAMENT_MAP_ID"
               internalUsageAttributionIds={['gmp_mcp_codeassist_v1_aistudio']}
               style={{ width: '100%', height: '100%' }}
             >
               {/* Main Venue */}
-              <AdvancedMarker position={{ lat: 37.42, lng: -122.08 }} title="Center Court">
+              <AdvancedMarker position={{ lat: 34.8732, lng: 72.8601 }} title="Khursheed Khan Volleyball Ground">
                 <Pin background="#f97316" borderColor="#c2410c" glyphColor="#fff" />
               </AdvancedMarker>
               
               {/* Parking 1 */}
-              <AdvancedMarker position={{ lat: 37.422, lng: -122.084 }} title="North Parking Lot">
-                <Pin background="#3b82f6" borderColor="#1d4ed8" glyphColor="#fff" />
-              </AdvancedMarker>
-
-              {/* Parking 2 */}
-              <AdvancedMarker position={{ lat: 37.418, lng: -122.076 }} title="East Event Parking">
+              <AdvancedMarker position={{ lat: 34.8740, lng: 72.8610 }} title="Main Parking Lot">
                 <Pin background="#3b82f6" borderColor="#1d4ed8" glyphColor="#fff" />
               </AdvancedMarker>
             </Map>
@@ -73,11 +68,11 @@ export default function Venue() {
                   <MapPin className="w-5 h-5 text-orange-500" />
                </div>
                <div>
-                  <h3 className="font-black text-white text-lg">Main Arena</h3>
-                  <p className="text-xs text-orange-500 font-bold tracking-wider uppercase">Center Court</p>
+                  <h3 className="font-black text-white text-lg">Main Ground</h3>
+                  <p className="text-xs text-orange-500 font-bold tracking-wider uppercase">Khursheed Khan</p>
                </div>
              </div>
-             <p className="text-sm text-slate-400 mb-3">1600 Amphitheatre Pkwy<br/>Mountain View, CA 94043</p>
+             <p className="text-sm text-slate-400 mb-3">Taja Maira,<br/>Bisham, Shangla</p>
              <button className="w-full bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
                <Navigation className="w-4 h-4" /> Get Directions
              </button>
@@ -85,9 +80,9 @@ export default function Venue() {
            
            <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl transition-colors hover:border-slate-700">
              <h3 className="font-bold text-slate-200 mb-2 flex items-center gap-2">
-               <div className="w-3 h-3 rounded-full bg-blue-500"></div> Parking Area
+               <div className="w-3 h-3 rounded-full bg-blue-500"></div> Event Dates
              </h3>
-             <p className="text-sm text-slate-400">Available on North and East sides of the complex. Opens 2 hours before the first match.</p>
+             <p className="text-sm text-slate-400">Tournament officially starts on <strong>2 July</strong>. Parking available near the ground.</p>
            </div>
            
            <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl transition-colors hover:border-slate-700">

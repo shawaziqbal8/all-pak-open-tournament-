@@ -1,15 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MatchScore, TeamReg } from '../types';
 import { Socket } from 'socket.io-client';
-import { CheckCircle2, ChevronRight, MessageCircle, Send, ShieldAlert, XCircle, Plus, Calendar as CalendarIcon, Clock, Edit2, Lock } from 'lucide-react';
+import { CheckCircle2, ChevronRight, MessageCircle, Send, ShieldAlert, XCircle, Plus, Calendar as CalendarIcon, Clock, Edit2, Lock, ImagePlus, MonitorPlay, Trash2 } from 'lucide-react';
 import { db } from '../lib/firebase';
-import { doc, updateDoc, setDoc } from 'firebase/firestore';
+import { doc, updateDoc, setDoc, deleteDoc, collection, onSnapshot, getDocs } from 'firebase/firestore';
+
+export interface AdImage {
+  id: string;
+  url: string;
+  active: boolean;
+}
 
 export default function AdminDashboard({ matches, teams, socket }: { matches: MatchScore[], teams: TeamReg[], socket: Socket | null }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'registrations' | 'bracket' | 'notifications' | 'analytics'>('registrations');
+  const [activeTab, setActiveTab] = useState<'registrations' | 'bracket' | 'notifications' | 'analytics' | 'ads'>('registrations');
   const [notificationMsg, setNotificationMsg] = useState('');
   const [isSending, setIsSending] = useState(false);
   
@@ -17,6 +23,42 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
   const [newMatchTeam1, setNewMatchTeam1] = useState('');
   const [newMatchTeam2, setNewMatchTeam2] = useState('');
   const [newMatchDate, setNewMatchDate] = useState('');
+
+  // Ads state
+  const [ads, setAds] = useState<AdImage[]>([]);
+  const [newAdUrl, setNewAdUrl] = useState('');
+
+  useEffect(() => {
+    let isSubscribed = true;
+    if (isAuthenticated) {
+      const unsub = onSnapshot(collection(db, 'ads'), (snapshot) => {
+        const dbAds = snapshot.docs.map(d => ({id: d.id, ...d.data()}) as AdImage);
+        if (isSubscribed) setAds(dbAds);
+      });
+      return () => { isSubscribed = false; unsub(); };
+    }
+  }, [isAuthenticated]);
+
+  const handleAddAd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAdUrl) return;
+    const id = 'ad_' + Date.now();
+    try {
+      await setDoc(doc(db, 'ads', id), { url: newAdUrl, active: true });
+      setNewAdUrl('');
+    } catch(e) {
+      console.error(e);
+      alert('Failed to add ad');
+    }
+  };
+
+  const handleToggleAd = async (id: string, active: boolean) => {
+    try { await updateDoc(doc(db, 'ads', id), { active }); } catch(e) {}
+  };
+
+  const handleDeleteAd = async (id: string) => {
+    try { await deleteDoc(doc(db, 'ads', id)); } catch(e) {}
+  };
 
   const pendingTeams = teams.filter(t => !t.verified);
   const verifiedTeams = teams.filter(t => t.verified);
@@ -154,7 +196,47 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
         <button onClick={() => setActiveTab('notifications')} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm ${activeTab === 'notifications' ? 'bg-red-500/20 text-red-500' : 'text-slate-400 hover:text-slate-200'}`}>
           <MessageCircle className="w-4 h-4" /> Broadcasts
         </button>
+        <button onClick={() => setActiveTab('ads')} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm ${activeTab === 'ads' ? 'bg-red-500/20 text-red-500' : 'text-slate-400 hover:text-slate-200'}`}>
+          <MonitorPlay className="w-4 h-4" /> Ads manager
+        </button>
       </div>
+
+      {activeTab === 'ads' && (
+        <div className="space-y-6">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
+            <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><ImagePlus className="w-5 h-5 text-orange-500" /> Upload Advertisements</h3>
+            <p className="text-sm text-slate-400 mb-4">Add image URLs to display sponsor banners on the main dashboard.</p>
+            <form onSubmit={handleAddAd} className="flex gap-2">
+              <input type="url" value={newAdUrl} onChange={e => setNewAdUrl(e.target.value)} required placeholder="https://example.com/banner.jpg" className="flex-1 bg-slate-800 border border-slate-700 p-3 rounded-lg text-white focus:border-red-500 outline-none" />
+              <button type="submit" className="bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 rounded-lg flex items-center gap-2 transition-colors">
+                <Plus className="w-5 h-5" /> Add Ad
+              </button>
+            </form>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {ads.map(ad => (
+              <div key={ad.id} className={`border p-4 rounded-xl relative overflow-hidden bg-slate-900 ${ad.active ? 'border-orange-500/50' : 'border-slate-800 opacity-60'}`}>
+                <div className="aspect-video w-full bg-slate-950 rounded-lg overflow-hidden mb-4 border border-slate-800">
+                  <img src={ad.url} alt="Ad Banner" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.src = 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=500&h=300&fit=crop')} />
+                </div>
+                <div className="flex justify-between items-center">
+                  <label className="flex items-center gap-2 text-sm font-bold text-slate-300 cursor-pointer">
+                    <input type="checkbox" checked={ad.active} onChange={(e) => handleToggleAd(ad.id, e.target.checked)} className="w-4 h-4 rounded accent-red-500" />
+                    {ad.active ? 'Live' : 'Hidden'}
+                  </label>
+                  <button onClick={() => handleDeleteAd(ad.id)} className="text-slate-500 hover:text-red-500 transition-colors p-2">
+                    <Trash2 className="w-5 h-5" />  
+                  </button>
+                </div>
+              </div>
+            ))}
+            {ads.length === 0 && (
+              <div className="col-span-full text-center p-8 text-slate-500 bg-slate-900 border border-slate-800 rounded-xl">No ads uploaded yet.</div>
+            )}
+          </div>
+        </div>
+      )}
 
       {activeTab === 'registrations' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

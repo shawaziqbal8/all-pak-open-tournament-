@@ -107,13 +107,26 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col p-2 md:p-6 text-slate-100">
       <header className="flex flex-col md:flex-row md:items-center justify-between mb-8 pb-4 border-b border-slate-800 gap-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-orange-500/10 p-2 border border-orange-500/20 rounded-lg">
-            <Trophy className="w-6 h-6 text-orange-500" />
+        <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+          <div className="flex items-center gap-3">
+            <div className="bg-orange-500/10 p-2 border border-orange-500/20 rounded-lg shrink-0">
+              <Trophy className="w-8 h-8 text-orange-500" />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-3xl font-black tracking-tight text-white leading-tight uppercase">ALL PAKISTAN OPEN</h1>
+              <p className="text-xs text-orange-500 font-bold tracking-widest uppercase">Volleyball Tournament</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-black tracking-tight text-white leading-tight">All Pakistan Open</h1>
-            <p className="text-xs text-orange-500 font-bold tracking-widest uppercase">Volleyball Tournament</p>
+          <div className="hidden lg:flex items-center gap-6 text-xs text-slate-400 font-medium">
+            <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-full">
+              <span className="text-orange-500">👑 Org:</span> Raham Iqbal Khan & Bakht Zeb
+            </div>
+            <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-full">
+              <span className="text-orange-500">📞</span> 0306-0888584
+            </div>
+            <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-full">
+              <span className="text-orange-500">🎗 Sponsor:</span> FGC
+            </div>
           </div>
         </div>
         

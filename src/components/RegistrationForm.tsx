@@ -78,6 +78,7 @@ export default function RegistrationForm({ socket }: RegistrationFormProps) {
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
               <h2 className="text-2xl font-bold text-white mb-2">Club Details</h2>
+              <p className="text-orange-400 text-sm font-bold mb-1">Registration is now officially open! Join or register your club to claim the title.</p>
               <p className="text-slate-400 text-sm">Register your club for the open tournament.</p>
             </div>
             <div className="space-y-4">
