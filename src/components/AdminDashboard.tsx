@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { MatchScore, TeamReg } from '../types';
 import { Socket } from 'socket.io-client';
-import { CheckCircle2, ChevronRight, MessageCircle, Send, ShieldAlert, XCircle, Plus, Calendar as CalendarIcon, Clock, Edit2 } from 'lucide-react';
+import { CheckCircle2, ChevronRight, MessageCircle, Send, ShieldAlert, XCircle, Plus, Calendar as CalendarIcon, Clock, Edit2, Lock } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { doc, updateDoc, setDoc } from 'firebase/firestore';
 
 export default function AdminDashboard({ matches, teams, socket }: { matches: MatchScore[], teams: TeamReg[], socket: Socket | null }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+
   const [activeTab, setActiveTab] = useState<'registrations' | 'bracket' | 'notifications' | 'analytics'>('registrations');
   const [notificationMsg, setNotificationMsg] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -101,6 +104,40 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
   const completedMatches = matches.filter(m => m.status === 'finished').length;
   const totalSets = matches.reduce((acc, m) => acc + (m.sets1 || 0) + (m.sets2 || 0), 0);
   const totalPoints = matches.reduce((acc, m) => acc + (m.points1 || 0) + (m.points2 || 0), 0);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="max-w-md mx-auto mt-20 bg-slate-900 border border-slate-800 p-8 rounded-2xl text-center space-y-6 shadow-2xl">
+        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/20">
+          <Lock className="w-8 h-8 text-red-500" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-black text-white mb-2">Admin Portal</h2>
+          <p className="text-sm text-slate-400">Enter the secret password to access.</p>
+        </div>
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          if (password === '55758') {
+             setIsAuthenticated(true);
+          } else {
+             alert('Invalid password');
+          }
+        }} className="space-y-4">
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-center text-white outline-none focus:border-red-500 tracking-widest text-lg transition-colors"
+            placeholder="•••••"
+            autoFocus
+          />
+          <button type="submit" className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl transition-colors text-lg tracking-wider">
+             Verify
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

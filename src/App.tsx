@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { Users, Zap, LayoutDashboard, ClipboardList, Target, ShieldCheck, Trophy, Calendar, PenTool, Ticket } from 'lucide-react';
+import { Users, Zap, LayoutDashboard, ClipboardList, Target, ShieldCheck, Trophy, Calendar, PenTool, Ticket, MapPin } from 'lucide-react';
 import { AppState, MatchScore, TeamReg } from './types';
 import Dashboard from './components/Dashboard';
 import RegistrationForm from './components/RegistrationForm';
@@ -10,11 +10,13 @@ import Leaderboard from './components/Leaderboard';
 import Schedule from './components/Schedule';
 import Playbook from './components/Playbook';
 import TicketPortal from './components/TicketPortal';
+import AdsManager from './components/AdsManager';
+import Venue from './components/Venue';
 import { db } from './lib/firebase';
 import { collection, onSnapshot, getDocs, setDoc, doc } from 'firebase/firestore';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'scores' | 'register' | 'admin' | 'leaderboard' | 'schedule' | 'playbook' | 'tickets'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'scores' | 'register' | 'admin' | 'leaderboard' | 'schedule' | 'playbook' | 'tickets' | 'venue'>('dashboard');
   const [usersConnected, setUsersConnected] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
   const [matches, setMatches] = useState<MatchScore[]>([]);
@@ -125,6 +127,9 @@ export default function App() {
           <button onClick={() => setActiveTab('schedule')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'schedule' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}>
             <Calendar className="w-4 h-4" /> <span className="hidden sm:inline">Schedule</span>
           </button>
+          <button onClick={() => setActiveTab('venue')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'venue' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}>
+            <MapPin className="w-4 h-4" /> <span className="hidden sm:inline">Venue</span>
+          </button>
           <button onClick={() => setActiveTab('tickets')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'tickets' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}>
             <Ticket className="w-4 h-4" /> <span className="hidden sm:inline">Tickets</span>
           </button>
@@ -155,9 +160,13 @@ export default function App() {
       </header>
 
       <main className="flex-1 w-full mx-auto max-w-7xl">
+        <div className="mb-8">
+          <AdsManager />
+        </div>
         {activeTab === 'dashboard' && <Dashboard matches={matches} teams={teams} />}
         {activeTab === 'leaderboard' && <Leaderboard matches={matches} teams={teams} />}
         {activeTab === 'schedule' && <Schedule matches={matches} />}
+        {activeTab === 'venue' && <Venue />}
         {activeTab === 'tickets' && <TicketPortal matches={matches} />}
         {activeTab === 'scores' && <ScoreTracker matches={matches} socket={socketRef.current} />}
         {activeTab === 'playbook' && <Playbook socket={socketRef.current} usersConnected={usersConnected} />}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MatchScore } from '../types';
-import { Calendar as CalendarIcon, Clock, MapPin, Bell, BellRing } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, MapPin, Bell, BellRing, Download } from 'lucide-react';
 import { DateTime } from 'luxon';
 
 export default function Schedule({ matches }: { matches: MatchScore[] }) {
@@ -32,6 +32,38 @@ export default function Schedule({ matches }: { matches: MatchScore[] }) {
     } else {
       alert('You previously denied notifications. Please enable them in your browser settings.');
     }
+  };
+
+  const exportToICS = (match: MatchScore) => {
+    if (!match.startTime) return;
+    
+    const startObj = DateTime.fromISO(match.startTime);
+    const endObj = startObj.plus({ hours: 1 }); // Estimate 1 hour duration
+    
+    // ICS expects format YYYYMMDDTHHmmssZ
+    const formatICSDate = (dt: DateTime) => dt.toUTC().toFormat("yyyyMMdd'T'HHmmss'Z'");
+    
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Volleyball Tournament//EN',
+      'BEGIN:VEVENT',
+      `SUMMARY:Volleyball: ${match.team1} vs ${match.team2}`,
+      `DTSTART:${formatICSDate(startObj)}`,
+      `DTEND:${formatICSDate(endObj)}`,
+      'LOCATION:Center Court',
+      'DESCRIPTION:Tournament Match',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\n');
+    
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.download = `${match.team1}_vs_${match.team2}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const upcomingMatches = matches.filter(m => m.status === 'upcoming');
@@ -71,8 +103,18 @@ export default function Schedule({ matches }: { matches: MatchScore[] }) {
                 <span className="text-slate-600 text-sm font-black italic px-4">VS</span>
                 <span className="font-bold text-lg text-slate-200">{match.team2}</span>
               </div>
-              <div className="mt-5 pt-3 border-t border-slate-800/50 flex items-center gap-2 text-xs text-slate-500">
-                <MapPin className="w-3 h-3" /> Center Court
+              <div className="mt-5 pt-3 border-t border-slate-800/50 flex items-center justify-between text-xs text-slate-500">
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-3 h-3" /> Center Court
+                </div>
+                {match.startTime && (
+                  <button 
+                    onClick={() => exportToICS(match)}
+                    className="flex items-center gap-1 text-orange-500 hover:text-orange-400 font-bold transition-colors"
+                  >
+                    <Download className="w-3 h-3" /> Export to Calendar
+                  </button>
+                )}
               </div>
             </div>
           ))}
