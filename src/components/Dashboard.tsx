@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MatchScore, TeamReg } from '../types';
-import { Activity, Calendar, Trophy, Users, Banknote, ShieldCheck, DollarSign, FileText, X, Clock, Zap, Target, MapPin } from 'lucide-react';
+import { Activity, Calendar, Trophy, Users, Banknote, ShieldCheck, DollarSign, FileText, X, Clock, Zap, Target, MapPin, LayoutDashboard } from 'lucide-react';
 
 interface DashboardProps {
   matches: MatchScore[];
