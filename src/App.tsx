@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { Users, Zap, LayoutDashboard, ClipboardList, Target, ShieldCheck, Trophy, Calendar, PenTool } from 'lucide-react';
+import { Users, Zap, LayoutDashboard, ClipboardList, Target, ShieldCheck, Trophy, Calendar, PenTool, Ticket } from 'lucide-react';
 import { AppState, MatchScore, TeamReg } from './types';
 import Dashboard from './components/Dashboard';
 import RegistrationForm from './components/RegistrationForm';
@@ -9,11 +9,12 @@ import AdminDashboard from './components/AdminDashboard';
 import Leaderboard from './components/Leaderboard';
 import Schedule from './components/Schedule';
 import Playbook from './components/Playbook';
+import TicketPortal from './components/TicketPortal';
 import { db } from './lib/firebase';
 import { collection, onSnapshot, getDocs, setDoc, doc } from 'firebase/firestore';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'scores' | 'register' | 'admin' | 'leaderboard' | 'schedule' | 'playbook'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'scores' | 'register' | 'admin' | 'leaderboard' | 'schedule' | 'playbook' | 'tickets'>('dashboard');
   const [usersConnected, setUsersConnected] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
   const [matches, setMatches] = useState<MatchScore[]>([]);
@@ -124,6 +125,9 @@ export default function App() {
           <button onClick={() => setActiveTab('schedule')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'schedule' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}>
             <Calendar className="w-4 h-4" /> <span className="hidden sm:inline">Schedule</span>
           </button>
+          <button onClick={() => setActiveTab('tickets')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'tickets' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}>
+            <Ticket className="w-4 h-4" /> <span className="hidden sm:inline">Tickets</span>
+          </button>
           <button onClick={() => setActiveTab('scores')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'scores' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}>
             <Zap className="w-4 h-4" /> <span className="hidden sm:inline">Live Scores</span>
           </button>
@@ -154,6 +158,7 @@ export default function App() {
         {activeTab === 'dashboard' && <Dashboard matches={matches} teams={teams} />}
         {activeTab === 'leaderboard' && <Leaderboard matches={matches} teams={teams} />}
         {activeTab === 'schedule' && <Schedule matches={matches} />}
+        {activeTab === 'tickets' && <TicketPortal matches={matches} />}
         {activeTab === 'scores' && <ScoreTracker matches={matches} socket={socketRef.current} />}
         {activeTab === 'playbook' && <Playbook socket={socketRef.current} usersConnected={usersConnected} />}
         {activeTab === 'register' && <RegistrationForm socket={socketRef.current} />}

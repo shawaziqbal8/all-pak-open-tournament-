@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MatchScore, TeamReg } from '../types';
-import { Activity, Calendar, Trophy, Users, BanknotesIcon as Banknotes, ShieldCheck, DollarSign } from 'lucide-react';
+import { Activity, Calendar, Trophy, Users, BanknotesIcon as Banknotes, ShieldCheck, DollarSign, FileText, X } from 'lucide-react';
+import AdsManager from './AdsManager';
 
 interface DashboardProps {
   matches: MatchScore[];
@@ -9,6 +10,13 @@ interface DashboardProps {
 
 export default function Dashboard({ matches, teams }: DashboardProps) {
   const [showAd, setShowAd] = useState(true);
+  const [rulesOpen, setRulesOpen] = useState(false);
+
+  useEffect(() => {
+    // Advertisement disappears after 1 hour (simulated here as 10s for preview)
+    const timer = setTimeout(() => setShowAd(false), 10000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const liveGames = matches.filter(m => m.status === 'live').length;
   const upcomingGames = matches.filter(m => m.status === 'upcoming').length;
@@ -18,6 +26,8 @@ export default function Dashboard({ matches, teams }: DashboardProps) {
 
   return (
     <div className="space-y-8">
+      <AdsManager />
+      
       {showAd && (
         <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 p-4 rounded-xl flex items-center justify-between animate-in fade-in zoom-in duration-500">
           <div>
@@ -77,18 +87,58 @@ export default function Dashboard({ matches, teams }: DashboardProps) {
         </div>
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 p-8 rounded-xl">
-         <h3 className="text-xl font-bold text-white mb-4">Official Rules & Guidelines</h3>
-         <div className="prose prose-invert prose-sm max-w-none text-slate-400">
-           <ul className="space-y-2">
-             <li>All matches will be played best of 3 sets for preliminary rounds, and best of 5 for semi-finals and finals.</li>
-             <li>Sets are played to 25 points with a minimum 2-point lead. Deciding sets are played to 15 points.</li>
-             <li>Captains must check in at the official's desk at least 30 minutes before the scheduled start time.</li>
-             <li>Substitutions are limited to 6 per set per team.</li>
-             <li>Entry fee of Rs. 5000 is strictly non-refundable and must be paid to secure the bracket spot.</li>
-           </ul>
+      <div className="bg-slate-900 border border-slate-800 p-8 rounded-xl flex items-center justify-between">
+         <div>
+           <h3 className="text-xl font-bold text-white mb-2">Official Rules & Guidelines</h3>
+           <p className="text-slate-400 text-sm">Review the tournament format, rules, and conduct regulations.</p>
          </div>
+         <button onClick={() => setRulesOpen(true)} className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold py-3 px-6 rounded-xl transition-colors">
+           <FileText className="w-5 h-5 text-orange-500" />
+           View Tournament Rules
+         </button>
       </div>
+
+      {rulesOpen && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-900 border border-slate-800 max-w-2xl w-full rounded-2xl p-6 md:p-8 relative max-h-[80vh] overflow-y-auto">
+            <button 
+              onClick={() => setRulesOpen(false)} 
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+            >
+               <X className="w-6 h-6" />
+            </button>
+            <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-2">
+              <FileText className="w-6 h-6 text-orange-500" /> Tournament Rules
+            </h2>
+            <div className="space-y-6 text-sm text-slate-300">
+               <div>
+                 <h3 className="text-orange-500 font-bold text-lg mb-2">1. Format & Timing</h3>
+                 <p className="leading-relaxed">Matches consist of best-of-3 sets. Each set is played to 25 points, win by 2. Deciding set (if needed) is played to 15 points. Teams must arrive 15 minutes before scheduled match time; failure to do so results in a forfeit. Timeouts are limited to 2 per set.</p>
+               </div>
+               <div>
+                 <h3 className="text-orange-500 font-bold text-lg mb-2">2. Roster & Eligibility</h3>
+                 <p className="leading-relaxed">Each team may register up to 12 players. Only players listed on the official roster verified before the tournament starts are eligible. New players cannot be added after the registration deadline. Photo ID may be requested during check-in.</p>
+               </div>
+               <div>
+                 <h3 className="text-orange-500 font-bold text-lg mb-2">3. Conduct & Sportsmanship</h3>
+                 <p className="leading-relaxed">Sportsmanship is paramount. Unsportsmanlike conduct, abuse toward referees or staff, or physical altercations will result in immediate disqualification of the entire team without refund. Decision of the official umpires is entirely final.</p>
+               </div>
+               <div>
+                 <h3 className="text-orange-500 font-bold text-lg mb-2">4. Uniforms</h3>
+                 <p className="leading-relaxed">Teams must wear matching colored jerseys with visible numbers on the front and back. Libero must wear a contrasting color jersey. Appropriate non-marking athletic footwear is strictly required.</p>
+               </div>
+            </div>
+            <div className="mt-8 pt-4 border-t border-slate-800 text-right">
+              <button 
+                onClick={() => setRulesOpen(false)}
+                className="bg-orange-600 hover:bg-orange-500 text-white font-bold py-2 px-8 rounded-xl transition-colors"
+              >
+                I Understand
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
