@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { MatchScore, TeamReg } from '../types';
 import { Socket } from 'socket.io-client';
-import { CheckCircle2, ChevronRight, MessageCircle, Send, ShieldAlert, XCircle, Plus, Calendar as CalendarIcon, Clock, Edit2, Lock, ImagePlus, MonitorPlay, Trash2 } from 'lucide-react';
-import { db } from '../lib/firebase';
+import { CheckCircle2, ChevronRight, MessageCircle, Send, ShieldAlert, XCircle, Plus, Calendar as CalendarIcon, Clock, Edit2, Lock, ImagePlus, MonitorPlay, Trash2, Upload } from 'lucide-react';
+import { db, storage } from '../lib/firebase';
 import { doc, updateDoc, setDoc, deleteDoc, collection, onSnapshot, getDocs } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export interface AdImage {
   id: string;
@@ -39,6 +40,7 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
     }
   }, [isAuthenticated]);
 
+  const [isUploading, setIsUploading] = useState(false);
   const handleAddAd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAdUrl) return;
@@ -49,6 +51,26 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
     } catch(e) {
       console.error(e);
       alert('Failed to add ad');
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const fileRef = ref(storage, `ads/${Date.now()}_${file.name}`);
+      await uploadBytes(fileRef, file);
+      const downloadUrl = await getDownloadURL(fileRef);
+      const id = 'ad_' + Date.now();
+      await setDoc(doc(db, 'ads', id), { url: downloadUrl, active: true });
+    } catch(e) {
+      console.error(e);
+      alert('Failed to upload image. Make sure Storage is configured.');
+    } finally {
+      setIsUploading(false);
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -203,15 +225,31 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
 
       {activeTab === 'ads' && (
         <div className="space-y-6">
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
-            <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><ImagePlus className="w-5 h-5 text-orange-500" /> Upload Advertisements</h3>
-            <p className="text-sm text-slate-400 mb-4">Add image URLs to display sponsor banners on the main dashboard.</p>
-            <form onSubmit={handleAddAd} className="flex gap-2">
-              <input type="url" value={newAdUrl} onChange={e => setNewAdUrl(e.target.value)} required placeholder="https://example.com/banner.jpg" className="flex-1 bg-slate-800 border border-slate-700 p-3 rounded-lg text-white focus:border-red-500 outline-none" />
-              <button type="submit" className="bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-3 rounded-lg flex items-center gap-2 transition-colors">
-                <Plus className="w-5 h-5" /> Add Ad
-              </button>
-            </form>
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+            <div>
+              <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><ImagePlus className="w-5 h-5 text-orange-500" /> Upload Advertisements</h3>
+              <p className="text-sm text-slate-400">Upload an image file or add an image URL to display sponsor banners.</p>
+            </div>
+            
+            <div className="flex flex-col gap-4 w-full md:w-auto">
+              <label className="bg-orange-600 hover:bg-orange-500 text-white font-bold px-6 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer w-full">
+                <Upload className="w-5 h-5" /> {isUploading ? 'Uploading...' : 'Upload Image'}
+                <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" disabled={isUploading} />
+              </label>
+
+              <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-widest justify-center">
+                <div className="w-12 h-px bg-slate-800"></div>
+                OR
+                <div className="w-12 h-px bg-slate-800"></div>
+              </div>
+              
+              <form onSubmit={handleAddAd} className="flex gap-2 w-full">
+                <input type="url" value={newAdUrl} onChange={e => setNewAdUrl(e.target.value)} required placeholder="https://example.com/banner.jpg" className="flex-1 min-w-[250px] bg-slate-800 border border-slate-700 p-3 rounded-lg text-white focus:border-red-500 outline-none" />
+                <button type="submit" className="bg-slate-800 hover:bg-slate-700 text-white font-bold px-4 py-3 rounded-lg flex items-center justify-center transition-colors">
+                  <Plus className="w-5 h-5" />
+                </button>
+              </form>
+            </div>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
