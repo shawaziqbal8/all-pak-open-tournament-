@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MatchScore, TeamReg } from '../types';
-import { Activity, Calendar, Trophy, Users, BanknotesIcon as Banknotes, ShieldCheck, DollarSign, FileText, X, Clock } from 'lucide-react';
+import { Activity, Calendar, Trophy, Users, BanknotesIcon as Banknotes, ShieldCheck, DollarSign, FileText, X, Clock, Zap, Target } from 'lucide-react';
 
 interface DashboardProps {
   matches: MatchScore[];
@@ -16,6 +16,47 @@ export default function Dashboard({ matches, teams }: DashboardProps) {
   
   const verifiedTeams = teams.filter(t => t.verified).length;
   const fundsRaised = verifiedTeams * 5000;
+
+  // Analytics Aggregation
+  const teamStats: Record<string, { pointsScored: number, setsWon: number, setsPlayed: number }> = {};
+
+  matches.forEach(m => {
+    if (m.status !== 'upcoming') {
+      if (!teamStats[m.team1]) teamStats[m.team1] = { pointsScored: 0, setsWon: 0, setsPlayed: 0 };
+      if (!teamStats[m.team2]) teamStats[m.team2] = { pointsScored: 0, setsWon: 0, setsPlayed: 0 };
+
+      teamStats[m.team1].pointsScored += m.points1 || 0;
+      teamStats[m.team1].setsWon += m.sets1 || 0;
+      teamStats[m.team1].setsPlayed += (m.sets1 || 0) + (m.sets2 || 0);
+
+      teamStats[m.team2].pointsScored += m.points2 || 0;
+      teamStats[m.team2].setsWon += m.sets2 || 0;
+      teamStats[m.team2].setsPlayed += (m.sets1 || 0) + (m.sets2 || 0);
+    }
+  });
+
+  let topScoringTeam = { name: '-', points: 0 };
+  let topSetWinTeam = { name: '-', percentage: 0 };
+
+  Object.entries(teamStats).forEach(([teamName, stats]) => {
+    if (stats.pointsScored > topScoringTeam.points) {
+      topScoringTeam = { name: teamName, points: stats.pointsScored };
+    }
+    
+    if (stats.setsPlayed > 0) {
+      const percentage = (stats.setsWon / stats.setsPlayed) * 100;
+      if (percentage > topSetWinTeam.percentage) {
+        topSetWinTeam = { name: teamName, percentage };
+      } else if (percentage === topSetWinTeam.percentage && percentage > 0) {
+        // Tie breaker could be sets won or simply let it be
+      }
+    }
+  });
+
+  if (topSetWinTeam.percentage === 0 && topScoringTeam.points === 0) {
+    topScoringTeam.name = 'N/A';
+    topSetWinTeam.name = 'N/A';
+  }
 
   const targetDate = new Date('2026-07-02T00:00:00').getTime();
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -118,6 +159,80 @@ export default function Dashboard({ matches, teams }: DashboardProps) {
         </div>
       </div>
 
+      <div>
+        <h2 className="text-2xl font-black text-white mb-6">Top Tournament Statistics</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl flex items-center justify-between group hover:border-slate-700 transition-colors">
+            <div>
+              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Most Points Scored</p>
+              <p className="text-3xl font-black text-white">{topScoringTeam.name}</p>
+              <p className="text-sm text-green-500 font-bold mt-1">{topScoringTeam.points} pts accumulated</p>
+            </div>
+            <div className="bg-orange-500/10 p-4 rounded-xl text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+              <Zap className="w-6 h-6" />
+            </div>
+          </div>
+          
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl flex items-center justify-between group hover:border-slate-700 transition-colors">
+            <div>
+              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Highest Set Win Percentage</p>
+              <p className="text-3xl font-black text-white">{topSetWinTeam.name}</p>
+              <p className="text-sm text-blue-500 font-bold mt-1">{topSetWinTeam.percentage.toFixed(1)}% win rate</p>
+            </div>
+            <div className="bg-blue-500/10 p-4 rounded-xl text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+              <Target className="w-6 h-6" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-2xl font-black text-white mb-6">Registered Teams Profiles</h2>
+        {teams.length === 0 ? (
+          <div className="bg-slate-900 border border-slate-800 p-8 rounded-xl text-center">
+            <p className="text-slate-500">No teams registered yet.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {teams.map(team => (
+              <div key={team.id} className="bg-slate-900 border border-slate-800 p-6 rounded-xl hover:border-slate-700 transition-all group overflow-hidden" tabIndex={0}>
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold text-white mb-1 group-hover:text-orange-500 transition-colors">{team.teamName}</h3>
+                    <p className="text-sm text-slate-400">Capt: {team.captainName}</p>
+                  </div>
+                  <div className={`text-xs font-bold px-2 py-1 rounded border ${team.verified ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-orange-500/10 text-orange-500 border-orange-500/20'}`}>
+                    {team.verified ? 'Verified' : 'Pending'}
+                  </div>
+                </div>
+                
+                <div className="pt-4 border-t border-slate-800">
+                  <details className="cursor-pointer group/details">
+                    <summary className="text-sm font-bold text-slate-300 hover:text-white transition-colors flex items-center justify-between outline-none">
+                      View Player Roster ({team.roster?.length || 0})
+                       <span className="text-slate-500 group-open/details:rotate-180 transition-transform">▼</span>
+                    </summary>
+                    <div className="mt-4 space-y-2 max-h-40 overflow-y-auto custom-scrollbar pr-2">
+                       {team.roster && team.roster.length > 0 ? team.roster.map((player: any, i: number) => (
+                         <div key={i} className="flex justify-between items-center text-sm py-1 border-b border-slate-800/50 last:border-0">
+                           <span className="text-slate-300 flex items-center gap-2">
+                             <div className="w-5 h-5 rounded bg-slate-800 text-slate-500 flex items-center justify-center text-[10px]">{i + 1}</div>
+                             {player.name || player.playerName || 'Unknown'}
+                           </span>
+                           {player.jerseyNumber && <span className="text-orange-500 font-mono text-xs bg-orange-500/10 px-1.5 rounded">#{player.jerseyNumber}</span>}
+                         </div>
+                       )) : (
+                         <div className="text-sm text-slate-500 italic pb-2">No players listed.</div>
+                       )}
+                    </div>
+                  </details>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="bg-slate-900 border border-slate-800 p-8 rounded-xl flex items-center justify-between">
          <div>
            <h3 className="text-xl font-bold text-white mb-2">Official Rules & Guidelines</h3>
@@ -148,7 +263,7 @@ export default function Dashboard({ matches, teams }: DashboardProps) {
                </div>
                <div>
                  <h3 className="text-orange-500 font-bold text-lg mb-2">2. Roster & Eligibility</h3>
-                 <p className="leading-relaxed">Each team may register up to 12 players. Only players listed on the official roster verified before the tournament starts are eligible. New players cannot be added after the registration deadline. Photo ID may be requested during check-in.</p>
+                 <p className="leading-relaxed">Each team may register up to 14 players. Only players listed on the official roster verified before the tournament starts are eligible. New players cannot be added after the registration deadline. Photo ID may be requested during check-in.</p>
                </div>
                <div>
                  <h3 className="text-orange-500 font-bold text-lg mb-2">3. Conduct & Sportsmanship</h3>

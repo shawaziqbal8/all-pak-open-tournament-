@@ -57,6 +57,16 @@ export default function Venue() {
               <AdvancedMarker position={{ lat: 34.8740, lng: 72.8610 }} title="Main Parking Lot">
                 <Pin background="#3b82f6" borderColor="#1d4ed8" glyphColor="#fff" />
               </AdvancedMarker>
+
+              {/* Medical Tent */}
+              <AdvancedMarker position={{ lat: 34.8735, lng: 72.8590 }} title="Medical Services">
+                <Pin background="#ef4444" borderColor="#b91c1c" glyphColor="#fff" />
+              </AdvancedMarker>
+
+              {/* Food & Beverages */}
+              <AdvancedMarker position={{ lat: 34.8725, lng: 72.8605 }} title="Food Stalls & Refreshments">
+                <Pin background="#22c55e" borderColor="#15803d" glyphColor="#fff" />
+              </AdvancedMarker>
             </Map>
           </APIProvider>
         </div>

@@ -60,6 +60,7 @@ export default function TeamDetailModal({ selectedTeam, setSelectedTeam, matches
                        {selectedTeam.players.map((p: any, i: number) => (
                          <div key={i} className="flex justify-between items-center p-3 text-sm">
                            <span className="font-medium flex items-center gap-2"><div className="w-6 h-6 rounded bg-slate-800 flex items-center justify-center text-xs font-mono text-slate-400">{i+1}</div> {p.name || 'Unnamed Player'}</span>
+                           {p.jerseyNumber && <span className="font-mono text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded text-xs border border-orange-500/20">#{p.jerseyNumber}</span>}
                          </div>
                        ))}
                      </div>
@@ -67,7 +68,8 @@ export default function TeamDetailModal({ selectedTeam, setSelectedTeam, matches
                      <div className="divide-y divide-slate-800/50">
                        {selectedTeam.roster.map((p: any, i: number) => (
                          <div key={i} className="flex justify-between items-center p-3 text-sm">
-                           <span className="font-medium flex items-center gap-2"><div className="w-6 h-6 rounded bg-slate-800 flex items-center justify-center text-xs font-mono text-slate-400">{i+1}</div> {p.playerName || 'Unnamed Player'}</span>
+                           <span className="font-medium flex items-center gap-2"><div className="w-6 h-6 rounded bg-slate-800 flex items-center justify-center text-xs font-mono text-slate-400">{i+1}</div> {p.playerName || p.name || 'Unnamed Player'}</span>
+                           {p.jerseyNumber && <span className="font-mono text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded text-xs border border-orange-500/20">#{p.jerseyNumber}</span>}
                          </div>
                        ))}
                      </div>

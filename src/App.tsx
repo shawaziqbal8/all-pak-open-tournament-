@@ -18,7 +18,15 @@ import { db } from './lib/firebase';
 import { collection, onSnapshot, getDocs, setDoc, doc } from 'firebase/firestore';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'scores' | 'register' | 'admin' | 'leaderboard' | 'schedule' | 'playbook' | 'tickets' | 'venue' | 'highlights' | 'faq'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'scores' | 'register' | 'admin' | 'leaderboard' | 'schedule' | 'playbook' | 'tickets' | 'venue' | 'highlights' | 'faq'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('success') === 'true' || params.get('canceled') === 'true') {
+        return 'register';
+      }
+    }
+    return 'dashboard';
+  });
   const [usersConnected, setUsersConnected] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
   const [matches, setMatches] = useState<MatchScore[]>([]);

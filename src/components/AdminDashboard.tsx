@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { MatchScore, TeamReg } from '../types';
 import { Socket } from 'socket.io-client';
-import { CheckCircle2, ChevronRight, MessageCircle, Send, ShieldAlert, XCircle, Plus, Calendar as CalendarIcon, Clock, Edit2, Lock, ImagePlus, MonitorPlay, Trash2, Upload, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, ChevronRight, MessageCircle, Send, ShieldAlert, XCircle, Plus, Calendar as CalendarIcon, Clock, Edit2, Lock, ImagePlus, MonitorPlay, Trash2, Upload, AlertTriangle, Download } from 'lucide-react';
 import { db, storage } from '../lib/firebase';
 import { doc, updateDoc, setDoc, deleteDoc, collection, onSnapshot, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import TeamDetailModal from './TeamDetailModal';
+
+import BracketTree from './BracketTree';
 
 export interface AdImage {
   id: string;
@@ -17,7 +19,7 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'registrations' | 'bracket' | 'notifications' | 'analytics' | 'ads'>('registrations');
+  const [activeTab, setActiveTab] = useState<'registrations' | 'bracket' | 'notifications' | 'analytics' | 'ads' | 'tickets'>('registrations');
   const [selectedTeam, setSelectedTeam] = useState<any | null>(null);
   const [notificationMsg, setNotificationMsg] = useState('');
   const [alertMsg, setAlertMsg] = useState('');
@@ -28,6 +30,9 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
   const [newMatchTeam1, setNewMatchTeam1] = useState('');
   const [newMatchTeam2, setNewMatchTeam2] = useState('');
   const [newMatchDate, setNewMatchDate] = useState('');
+
+  // Tickets state
+  const [tickets, setTickets] = useState<any[]>([]);
 
   // Ads state
   const [ads, setAds] = useState<AdImage[]>([]);
@@ -40,7 +45,10 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
         const dbAds = snapshot.docs.map(d => ({id: d.id, ...d.data()}) as AdImage);
         if (isSubscribed) setAds(dbAds);
       });
-      return () => { isSubscribed = false; unsub(); };
+      const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
+        if (isSubscribed) setTickets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      });
+      return () => { isSubscribed = false; unsub(); unsubTickets(); };
     }
   }, [isAuthenticated]);
 
@@ -89,11 +97,135 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
   const pendingTeams = teams.filter(t => !t.verified);
   const verifiedTeams = teams.filter(t => t.verified);
 
+  const handleDownloadCSV = () => {
+    const headers = ['Team Name', 'Captain Name', 'Contact Details', 'Status', 'Verified', 'Player Details (Name - Jersey)'];
+    const csvRows = [headers.join(',')];
+    
+    teams.forEach(team => {
+      const rosterDetails = team.roster && team.roster.length > 0 
+        ? team.roster.map((p: any) => `${p.name || p.playerName || 'Unknown'} (#${p.jerseyNumber || 'N/A'})`).join(' | ')
+        : 'No players';
+
+      const row = [
+        `"${(team.teamName || '').replace(/"/g, '""')}"`,
+        `"${(team.captainName || '').replace(/"/g, '""')}"`,
+        `"${(team.contactDetails || '').replace(/"/g, '""')}"`,
+        `"${team.paymentStatus || ''}"`,
+        team.verified ? 'Yes' : 'No',
+        `"${rosterDetails.replace(/"/g, '""')}"`
+      ];
+      csvRows.push(row.join(','));
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8," + csvRows.join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `tournament_teams_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleVerify = async (teamId: string, verified: boolean) => {
     try {
       await updateDoc(doc(db, 'teams', teamId), { verified });
     } catch(e) {
       console.error(e);
+    }
+  };
+
+  const handleVerifyTicket = async (ticketId: string, verified: boolean) => {
+    try {
+      await updateDoc(doc(db, 'tickets', ticketId), { verified });
+    } catch(e) {
+      console.error(e);
+    }
+  };
+
+  const handlePrintTeamPass = (team: any) => {
+    const rosterHtml = team.roster && team.roster.length > 0 
+      ? team.roster.map((p: any) => `<li>${p.name || p.playerName} <span style="color:#666; font-size: 14px;">(#${p.jerseyNumber || 'N/A'})</span></li>`).join('')
+      : '<li>No players listed</li>';
+
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Team Registration Pass - ${team.teamName}</title>
+            <style>
+              body { font-family: sans-serif; padding: 40px; text-align: center; }
+              .pass { border: 2px dashed #000; padding: 40px; max-width: 600px; margin: 0 auto; }
+              h1 { margin-top: 0; }
+              .details { text-align: left; margin-top: 30px; font-size: 18px; line-height: 1.6; }
+              .roster { margin-top: 20px; text-align: left; }
+              .roster h3 { margin-bottom: 10px; }
+              .roster ul { list-style-type: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+              .roster li { font-size: 16px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+            </style>
+          </head>
+          <body>
+            <div class="pass">
+              <h1>ALL PAKISTAN OPEN VOLLEYBALL</h1>
+              <h2>OFFICIAL TEAM PASS</h2>
+              <hr />
+              <div class="details">
+                <p><strong>Team Name:</strong> ${team.teamName}</p>
+                <p><strong>Captain:</strong> ${team.captainName}</p>
+                <p><strong>Status:</strong> VERIFIED</p>
+              </div>
+              <div class="roster">
+                <h3>Player Roster (${team.roster?.length || 0})</h3>
+                <ul>
+                  ${rosterHtml}
+                </ul>
+              </div>
+            </div>
+            <script>
+              window.onload = function() { window.print(); window.close(); }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+  };
+
+  const handlePrintTicket = (ticket: any) => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Spectator Pass - ${ticket.ticketName}</title>
+            <style>
+              body { font-family: sans-serif; padding: 40px; text-align: center; }
+              .pass { border: 2px dashed #000; padding: 40px; max-width: 400px; margin: 0 auto; background: #fafafa; }
+              h1 { margin-top: 0; font-size: 24px; }
+              .type { font-size: 20px; font-weight: bold; color: #d97706; margin: 20px 0; }
+              .details { text-align: left; margin-top: 20px; font-size: 16px; line-height: 1.6; }
+            </style>
+          </head>
+          <body>
+            <div class="pass">
+              <h1>ALL PAKISTAN OPEN VOLLEYBALL</h1>
+              <div class="type">${ticket.ticketName}</div>
+              <hr />
+              <div class="details">
+                <p><strong>Name:</strong> ${ticket.buyerName || 'Guest'}</p>
+                <p><strong>Phone:</strong> ${ticket.buyerPhone || 'N/A'}</p>
+                <p><strong>Perks:</strong> ${ticket.description}</p>
+                <p><strong>Status:</strong> VERIFIED</p>
+              </div>
+            </div>
+            <script>
+              window.onload = function() { window.print(); window.close(); }
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
     }
   };
 
@@ -252,6 +384,9 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
         <button onClick={() => setActiveTab('ads')} className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm ${activeTab === 'ads' ? 'bg-red-500/20 text-red-500' : 'text-slate-400 hover:text-slate-200'}`}>
           <MonitorPlay className="w-4 h-4" /> Ads manager
         </button>
+        <button onClick={() => setActiveTab('tickets')} className={`px-4 py-2 rounded-lg font-bold text-sm ${activeTab === 'tickets' ? 'bg-red-500/20 text-red-500' : 'text-slate-400 hover:text-slate-200'}`}>
+          Tickets ({tickets.filter(t => !t.verified).length} Pending)
+        </button>
       </div>
 
       {activeTab === 'ads' && (
@@ -308,8 +443,14 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
       )}
 
       {activeTab === 'registrations' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="space-y-4">
+        <div className="space-y-6">
+          <div className="flex justify-end">
+            <button onClick={handleDownloadCSV} className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded-lg transition-colors text-sm">
+              <Download className="w-4 h-4" /> Download Teams (CSV)
+            </button>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
             <h3 className="font-bold text-lg text-slate-300 flex items-center gap-2">
               <ShieldAlert className="w-5 h-5 text-orange-500" /> Pending Approval
             </h3>
@@ -348,6 +489,9 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
                   <p className="text-xs text-slate-500">Contact: {team.contactDetails}</p>
                 </div>
                 <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                  <button onClick={() => handlePrintTeamPass(team)} className="text-slate-500 hover:text-orange-500 p-2 opacity-0 group-hover:opacity-100 transition-all font-bold text-xs flex items-center gap-1">
+                    Print Pass
+                  </button>
                   <button onClick={() => handleWhatsAppContact(team.contactDetails, `Hi ${team.captainName}, your team ${team.teamName} is verified for the upcoming tournament!`)} className="text-slate-500 hover:text-green-500 p-2 opacity-0 group-hover:opacity-100 transition-all">
                     <MessageCircle className="w-4 h-4" />
                   </button>
@@ -359,11 +503,13 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
             ))}
           </div>
         </div>
+        </div>
       )}
 
       {activeTab === 'bracket' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-6">
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-6">
             <div>
               <h3 className="text-xl font-bold text-white mb-2">Schedule New Match</h3>
               <p className="text-sm text-slate-400">Add an upcoming match to the tournament schedule.</p>
@@ -443,6 +589,8 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
               {matches.length === 0 && <p className="text-slate-500 text-sm">No matches in the system.</p>}
             </div>
           </div>
+          </div>
+          <BracketTree matches={matches} />
         </div>
       )}
 
@@ -532,6 +680,61 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
                  </button>
                </div>
              </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'tickets' && (
+        <div className="space-y-6">
+          <div className="space-y-4">
+            <h3 className="font-bold text-lg text-slate-300">Pending Spectator Tickets</h3>
+            {tickets.filter(t => !t.verified).length === 0 ? (
+              <div className="text-slate-500 text-sm bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">No pending tickets.</div>
+            ) : tickets.filter(t => !t.verified).map(ticket => (
+              <div key={ticket.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-3 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-2 bg-orange-500/10 text-orange-500 text-xs font-bold rounded-bl-lg">Pending</div>
+                <h4 className="font-bold text-lg">{ticket.ticketName}</h4>
+                <div className="text-sm text-slate-400 space-y-1">
+                  <p>Buyer: {ticket.buyerName}</p>
+                  <p>Contact: {ticket.buyerPhone}</p>
+                  <p>Price: PKR {ticket.price}</p>
+                  <p>Status: {ticket.paymentStatus}</p>
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <button onClick={() => handleVerifyTicket(ticket.id, true)} className="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-500 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" /> Verify Payment
+                  </button>
+                  <button onClick={() => handleWhatsAppContact(ticket.buyerPhone, `Hi ${ticket.buyerName}, your ticket payment for ${ticket.ticketName} is pending. Please complete it.`)} className="px-4 bg-blue-500/20 hover:bg-blue-500/30 text-blue-500 rounded-lg flex items-center justify-center transition-colors">
+                    <MessageCircle className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="font-bold text-lg text-slate-300">Verified Spectator Tickets</h3>
+            {tickets.filter(t => t.verified).length === 0 ? (
+              <div className="text-slate-500 text-sm bg-slate-900/50 border border-slate-800 p-4 rounded-xl text-center">No tickets verified yet.</div>
+            ) : tickets.filter(t => t.verified).map(ticket => (
+              <div key={ticket.id} className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl flex justify-between items-center group">
+                <div>
+                  <h4 className="font-bold text-slate-200">{ticket.ticketName} - {ticket.buyerName}</h4>
+                  <p className="text-xs text-slate-500">Contact: {ticket.buyerPhone}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => handlePrintTicket(ticket)} className="text-slate-500 hover:text-orange-500 p-2 opacity-0 group-hover:opacity-100 transition-all font-bold text-xs flex items-center gap-1">
+                    Print Pass
+                  </button>
+                  <button onClick={() => handleWhatsAppContact(ticket.buyerPhone, `Hi ${ticket.buyerName}, your ${ticket.ticketName} is verified. Your pass is ready.`)} className="text-slate-500 hover:text-green-500 p-2 opacity-0 group-hover:opacity-100 transition-all">
+                    <MessageCircle className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => handleVerifyTicket(ticket.id, false)} className="text-slate-500 hover:text-red-400 p-2">
+                    <XCircle className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Socket } from 'socket.io-client';
 import { db } from '../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { Player } from '../types';
 import { CheckCircle2, CreditCard, Loader2, Plus, Trash2 } from 'lucide-react';
 
@@ -19,8 +19,30 @@ export default function RegistrationForm({ socket }: RegistrationFormProps) {
   ]);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const success = params.get('success');
+    const teamId = params.get('teamId');
+    const canceled = params.get('canceled');
+
+    if (success === 'true' && teamId) {
+      // Mark as paid in DB
+      updateDoc(doc(db, 'teams', teamId), {
+        paymentStatus: 'paid'
+      }).then(() => {
+        setStep(4);
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }).catch(console.error);
+    } else if (canceled === 'true') {
+      alert('Payment was canceled. You can try again.');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setStep(3);
+    }
+  }, []);
+
   const handleAddPlayer = () => {
-    if (roster.length >= 12) return;
+    if (roster.length >= 14) return;
     setRoster([...roster, { id: 'p' + Math.random().toString(36).substring(2), name: '', jerseyNumber: '', position: 'Outside Hitter' }]);
   };
 
@@ -37,22 +59,32 @@ export default function RegistrationForm({ socket }: RegistrationFormProps) {
     setIsProcessingPayment(true);
     
     try {
-      // Simulate Stripe Checkout
-      const res = await fetch('/api/checkout', { method: 'POST' });
+      const id = Math.random().toString(36).substring(2, 9);
+      
+      await setDoc(doc(db, 'teams', id), {
+        id,
+        teamName,
+        captainName,
+        contactDetails,
+        roster: roster.filter(p => p.name.trim() !== ''),
+        paymentStatus: 'pending',
+        verified: false
+      });
+
+      const res = await fetch('/api/checkout', { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId: id, teamName })
+      });
       const data = await res.json();
       
-      if (data.success) {
-        const id = Math.random().toString(36).substring(2, 9);
-        await setDoc(doc(db, 'teams', id), {
-          id,
-          teamName,
-          captainName,
-          contactDetails,
-          roster: roster.filter(p => p.name.trim() !== ''),
-          paymentStatus: 'paid',
-          verified: false
-        });
+      if (data.url) {
+        window.location.href = data.url;
+      } else if (data.success) {
+        await updateDoc(doc(db, 'teams', id), { paymentStatus: 'paid' });
         setStep(4);
+      } else {
+        alert('Payment processing failed.');
       }
     } catch (e) {
       console.error(e);
@@ -113,9 +145,9 @@ export default function RegistrationForm({ socket }: RegistrationFormProps) {
             <div className="flex justify-between items-end">
               <div>
                 <h2 className="text-2xl font-bold text-white mb-2">Player Roster</h2>
-                <p className="text-slate-400 text-sm">Add between 6 and 12 players.</p>
+                <p className="text-slate-400 text-sm">Add between 6 and 14 players.</p>
               </div>
-              <span className="text-sm font-bold text-slate-500">{roster.length}/12</span>
+              <span className="text-sm font-bold text-slate-500">{roster.length}/14</span>
             </div>
             
             <div className="space-y-3">
