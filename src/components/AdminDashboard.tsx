@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { MatchScore, TeamReg } from '../types';
 import { Socket } from 'socket.io-client';
 import { CheckCircle2, ChevronRight, MessageCircle, Send, ShieldAlert, XCircle, Plus, Calendar as CalendarIcon, Clock, Edit2, Lock, ImagePlus, MonitorPlay, Trash2, Upload, AlertTriangle, Download } from 'lucide-react';
-import { db, storage } from '../lib/firebase';
+import { db } from '../lib/firebase';
 import { doc, updateDoc, setDoc, deleteDoc, collection, onSnapshot, getDocs } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import TeamDetailModal from './TeamDetailModal';
 
 import BracketTree from './BracketTree';
@@ -72,17 +71,43 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
 
     setIsUploading(true);
     try {
-      const fileRef = ref(storage, `ads/${Date.now()}_${file.name}`);
-      await uploadBytes(fileRef, file);
-      const downloadUrl = await getDownloadURL(fileRef);
-      const id = 'ad_' + Date.now();
-      await setDoc(doc(db, 'ads', id), { url: downloadUrl, active: true });
-    } catch(e) {
-      console.error(e);
-      alert('Failed to upload image. Make sure Storage is configured.');
-    } finally {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > 800) {
+            height = Math.round((height * 800) / width);
+            width = 800;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          
+          try {
+            const id = 'ad_' + Date.now();
+            await setDoc(doc(db, 'ads', id), { url: dataUrl, active: true });
+          } catch(err) {
+            console.error(err);
+            alert('Failed to save ad to database.');
+          } finally {
+            setIsUploading(false);
+            if (e.target) e.target.value = '';
+          }
+        };
+        img.src = event.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    } catch(err) {
+      console.error(err);
+      alert('Failed to process image.');
       setIsUploading(false);
-      if (e.target) e.target.value = '';
     }
   };
 
