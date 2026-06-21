@@ -272,7 +272,7 @@ export default function App() {
         <div className="mb-8">
           <AdsManager />
         </div>
-        {activeTab === 'dashboard' && <Dashboard matches={matches} teams={teams} />}
+        {activeTab === 'dashboard' && <Dashboard matches={matches} teams={teams} setActiveTab={setActiveTab} />}
         {activeTab === 'leaderboard' && <Leaderboard matches={matches} teams={teams} />}
         {activeTab === 'schedule' && <Schedule matches={matches} />}
         {activeTab === 'venue' && <Venue />}

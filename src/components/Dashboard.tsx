@@ -5,9 +5,10 @@ import { Activity, Calendar, Trophy, Users, BanknotesIcon as Banknotes, ShieldCh
 interface DashboardProps {
   matches: MatchScore[];
   teams: TeamReg[];
+  setActiveTab?: (tab: 'dashboard' | 'scores' | 'register' | 'status' | 'admin' | 'leaderboard' | 'schedule' | 'playbook' | 'tickets' | 'venue' | 'highlights' | 'faq') => void;
 }
 
-export default function Dashboard({ matches, teams }: DashboardProps) {
+export default function Dashboard({ matches, teams, setActiveTab }: DashboardProps) {
   const [rulesOpen, setRulesOpen] = useState(false);
   const isLoading = matches.length === 0 && teams.length === 0;
 
@@ -110,6 +111,37 @@ export default function Dashboard({ matches, teams }: DashboardProps) {
           </div>
         </div>
       </div>
+      
+      {setActiveTab && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <button 
+            onClick={() => setActiveTab('register')}
+            className="bg-orange-600 hover:bg-orange-500 text-white p-6 rounded-xl flex items-center justify-between group transition-all shadow-lg hover:shadow-orange-500/20"
+          >
+            <div className="text-left">
+              <h3 className="text-2xl font-black mb-1 flex items-center gap-2"><Target className="w-6 h-6" /> Register Your Team</h3>
+              <p className="text-orange-200 text-sm font-medium">Secure your spot in the bracket</p>
+            </div>
+            <div className="bg-white/10 p-3 rounded-full group-hover:scale-110 transition-transform">
+              <Users className="w-6 h-6" />
+            </div>
+          </button>
+          
+          <button 
+            onClick={() => setActiveTab('tickets')}
+            className="bg-slate-800 hover:bg-slate-700 text-white p-6 rounded-xl flex items-center justify-between group transition-all shadow-lg hover:shadow-slate-700/50 border border-slate-700"
+          >
+            <div className="text-left">
+              <h3 className="text-2xl font-black mb-1 flex items-center gap-2"><Zap className="w-6 h-6 text-orange-500" /> Buy Spectator Tickets</h3>
+              <p className="text-slate-400 text-sm font-medium">Get tickets for the main event</p>
+            </div>
+            <div className="bg-orange-500/10 text-orange-500 p-3 rounded-full group-hover:scale-110 transition-transform">
+              <DollarSign className="w-6 h-6" />
+            </div>
+          </button>
+        </div>
+      )}
+
       <div>
         <h2 className="text-2xl font-black text-white mb-6">Tournament Overview</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

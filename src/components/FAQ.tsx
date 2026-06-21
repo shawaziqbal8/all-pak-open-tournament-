@@ -12,7 +12,7 @@ const faqs = [
   },
   {
     question: "What is the registration fee and how do I pay?",
-    answer: "The entry fee is Rs. 5000 per team. Payment instructions and accepted methods (JazzCash, EasyPaisa, Bank Transfer) will be displayed during the registration process."
+    answer: "The entry fee is Rs. 5000 per team. Payment instructions to send via Easypaisa will be displayed during the registration process."
   },
   {
     question: "How many players are allowed per team?",
