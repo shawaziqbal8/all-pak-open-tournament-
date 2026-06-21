@@ -1,6 +1,6 @@
 {
-  "name": "All Pakistan Open Volleyball Tournament",
-  "description": "Digital dashboard, registration flow, live bracket manager, score tracker, leaderboard, and push/email alerts for the All Pakistan Open Volleyball Tournament.",
-  "requestFramePermissions": [],
+  "name": "All Pakistan Open Volleyball",
+  "description": "Registration, live scores, and admin portal for the All Pakistan Open Volleyball Tournament.",
+  "requestFramePermissions": ["notifications"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
