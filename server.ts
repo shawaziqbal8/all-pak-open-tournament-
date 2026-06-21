@@ -50,6 +50,14 @@ async function startServer() {
     // Broadcast active users
     io.emit('users-changed', usersConnected);
 
+    socket.on('draw-action', (data) => {
+      socket.broadcast.emit('draw-action', data);
+    });
+
+    socket.on('clear-canvas', () => {
+      io.emit('clear-canvas');
+    });
+
     socket.on('disconnect', () => {
       usersConnected = Math.max(0, usersConnected - 1);
       io.emit('users-changed', usersConnected);
