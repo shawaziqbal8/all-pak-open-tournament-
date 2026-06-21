@@ -112,10 +112,61 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
     if (!selectedFile) return;
 
     setIsUploading(true);
+    let fileToUpload = selectedFile;
+
+    // Auto-compress images
+    if (selectedFile.type.startsWith('image/') && previewUrl) {
+      addUploadLog('Optimizing image size...');
+      try {
+        fileToUpload = await new Promise<File>((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 1200;
+            const MAX_HEIGHT = 1200;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height = Math.round((height * MAX_WIDTH) / width);
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width = Math.round((width * MAX_HEIGHT) / height);
+                height = MAX_HEIGHT;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+
+            canvas.toBlob((blob) => {
+              if (blob) {
+                resolve(new File([blob], selectedFile.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                }));
+              } else {
+                reject(new Error('Canvas is empty'));
+              }
+            }, 'image/jpeg', 0.85); // 85% quality
+          };
+          img.onerror = () => reject(new Error('Failed to load image'));
+          img.src = previewUrl;
+        });
+        addUploadLog(`Image optimized to ${(fileToUpload.size / 1024).toFixed(2)} KB.`);
+      } catch (err) {
+        addUploadLog(`Optimization failed: ${err}. Uploading original.`);
+      }
+    }
+
     addUploadLog('Upload Initiated using resumable storage SDK.');
 
-    const storageRef = ref(storage, `ads/${Date.now()}_${selectedFile.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, selectedFile);
+    const storageRef = ref(storage, `ads/${Date.now()}_${fileToUpload.name}`);
+    const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
 
     uploadTask.on('state_changed', 
       (snapshot) => {
@@ -474,72 +525,80 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
 
       {activeTab === 'ads' && (
         <div className="space-y-6">
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
-            <div>
-              <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><ImagePlus className="w-5 h-5 text-orange-500" /> Upload Advertisements</h3>
-              <p className="text-sm text-slate-400">Upload an image or video file securely using Firebase Resumable Storage, or add an external URL.</p>
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl flex flex-col xl:flex-row gap-6 items-start xl:items-center justify-between shadow-xl">
+            <div className="flex-1 max-w-lg">
+              <h3 className="text-2xl font-black text-white mb-3 flex items-center gap-2"><ImagePlus className="w-6 h-6 text-orange-500" /> Banner Ads Studio</h3>
+              <p className="text-sm text-slate-400 leading-relaxed text-balance">
+                Upload image or video files securely using standard Firebase Resumable Storage. Images are automatically compressed to ensure reliability. Alternatively, provide an external media link.
+              </p>
             </div>
             
-            <div className="flex flex-col gap-4 w-full md:w-auto">
+            <div className="flex flex-col gap-5 w-full xl:w-[450px]">
               {!selectedFile ? (
-                <label className="bg-orange-600 hover:bg-orange-500 text-white font-bold px-6 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer w-full">
-                  <Upload className="w-5 h-5" /> Select Media
+                <label className="group bg-slate-950 border-2 border-dashed border-slate-700 hover:border-orange-500 hover:bg-slate-900/50 text-slate-300 transition-all font-bold p-8 rounded-xl flex flex-col items-center justify-center gap-3 cursor-pointer w-full text-center">
+                  <div className="bg-slate-800 group-hover:bg-orange-500/20 group-hover:text-orange-400 p-3 rounded-full transition-colors">
+                    <Upload className="w-6 h-6" />
+                  </div>
+                  <span>Browse Media File</span>
+                  <span className="text-xs font-normal text-slate-500">Supported: WebM, MP4, JPEG, PNG</span>
                   <input type="file" accept="image/*,video/*" onChange={handleFileSelect} className="hidden" />
                 </label>
               ) : (
-                <div className="flex flex-col gap-2 w-full max-w-sm">
+                <div className="flex flex-col gap-3 w-full bg-slate-950 p-4 border border-slate-800 rounded-xl shadow-inner">
                   {previewUrl && (
-                    <div className="aspect-video w-full bg-slate-950 rounded-lg overflow-hidden border border-slate-700 relative">
+                    <div className="aspect-video w-full bg-black rounded-lg overflow-hidden border border-slate-800 relative group">
                        {previewType === 'video' ? (
-                         <video src={previewUrl} controls className="w-full h-full object-cover" />
+                         <video src={previewUrl} controls className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
                        ) : (
-                         <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                         <img src={previewUrl} alt="Preview" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
                        )}
-                       <div className="absolute top-2 left-2 bg-black/60 px-2 rounded text-xs font-bold text-orange-400">Preview</div>
+                       <div className="absolute top-2 left-2 bg-black/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] uppercase font-black text-orange-400 border border-white/10 shadow-sm">Preview Draft</div>
                     </div>
                   )}
                   
                   {isUploading && (
-                    <div className="w-full bg-slate-800 rounded-full h-2.5 mb-2 overflow-hidden border border-slate-700">
-                      <div className="bg-orange-500 h-2.5 transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                    <div className="w-full bg-slate-900 rounded-full h-3 mb-1 overflow-hidden border border-slate-800 relative shadow-inner">
+                      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImEiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTTAgNDBsNDAtNDBIMjBMMCAyMHptNDAgMEwyMCAwSDBsNDAgNDB6IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9Ii4xIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2EpIi8+PC9zdmc+')] opacity-20"></div>
+                      <div className="bg-orange-500 h-full transition-all duration-300 relative" style={{ width: `${uploadProgress}%` }}></div>
                     </div>
                   )}
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mt-1">
                     <button 
                       onClick={handleUploadFile} 
                       disabled={isUploading}
-                      className="flex-1 bg-green-600 hover:bg-green-500 disabled:bg-slate-700 text-white font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                      className="flex-1 bg-green-600 hover:bg-green-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-lg disabled:shadow-none"
                     >
                       {isUploading ? `${Math.round(uploadProgress)}% Uploading...` : 'Confirm Upload'}
                     </button>
                     <button 
                       onClick={cancelUpload} 
                       disabled={isUploading}
-                      className="bg-slate-800 hover:bg-slate-700 disabled:bg-slate-800 disabled:text-slate-600 text-white px-4 py-2 rounded-lg transition-colors"
+                      className="bg-slate-800 hover:bg-slate-700 disabled:bg-slate-900 disabled:text-slate-700 text-white px-4 py-3 rounded-lg transition-colors shadow-lg disabled:shadow-none"
+                      title="Cancel"
                     >
                       <XCircle className="w-5 h-5" />
                     </button>
                   </div>
 
                   {uploadLogs.length > 0 && (
-                    <div className="bg-slate-950 border border-slate-800 p-2 rounded-lg mt-2 h-24 overflow-y-auto font-mono text-[10px] text-slate-400 space-y-1">
-                      {uploadLogs.map((log, i) => <div key={i}>{log}</div>)}
+                    <div className="bg-black/50 border border-slate-800 p-3 rounded-lg mt-2 h-28 overflow-y-auto font-mono text-[10px] text-emerald-400/80 space-y-1 shadow-inner custom-scrollbar">
+                      {uploadLogs.map((log, i) => <div key={i}>&gt; {log}</div>)}
                     </div>
                   )}
                 </div>
               )}
 
-              <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-widest justify-center">
-                <div className="w-12 h-px bg-slate-800"></div>
-                OR
-                <div className="w-12 h-px bg-slate-800"></div>
+              <div className="flex items-center gap-3 text-slate-600 text-[10px] font-black uppercase tracking-widest justify-center">
+                <div className="flex-1 h-px bg-slate-800"></div>
+                OR EXTERNAL LINK
+                <div className="flex-1 h-px bg-slate-800"></div>
               </div>
               
               <form onSubmit={handleAddAd} className="flex flex-col gap-2 w-full">
-                <div className="flex gap-2 w-full">
-                  <input type="url" value={newAdUrl} onChange={e => setNewAdUrl(e.target.value)} required placeholder="https://example.com/banner.mp4" className="flex-1 min-w-[250px] bg-slate-800 border border-slate-700 p-3 rounded-lg text-white focus:border-orange-500 outline-none" />
-                  <button type="submit" className="bg-slate-800 hover:bg-slate-700 text-white font-bold px-4 py-3 rounded-lg flex items-center justify-center transition-colors">
+                <div className="flex gap-2 w-full relative">
+                  <input type="url" value={newAdUrl} onChange={e => setNewAdUrl(e.target.value)} required placeholder="https://example.com/banner.mp4" className="flex-1 min-w-0 bg-slate-950 border border-slate-800 p-3 pl-4 rounded-lg text-white focus:border-orange-500 focus:ring-1 focus:ring-orange-500 outline-none transition-all placeholder:text-slate-600 shadow-inner" />
+                  <button type="submit" className="bg-slate-800 hover:bg-slate-700 text-white font-bold px-4 rounded-lg flex items-center justify-center transition-colors border border-slate-700 shadow-md">
                     <Plus className="w-5 h-5" />
                   </button>
                 </div>
