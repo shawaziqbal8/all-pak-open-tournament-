@@ -7,3 +7,21 @@
     @apply bg-slate-950 text-slate-50 antialiased;
   }
 }
+
+.theme-light {
+  filter: invert(1) hue-rotate(180deg);
+  background-color: white;
+}
+
+.theme-light img,
+.theme-light video,
+.theme-light [role="img"] {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+.theme-light .text-orange-500,
+.theme-light .bg-orange-500,
+.theme-light .text-orange-600,
+.theme-light .bg-orange-600 {
+  filter: hue-rotate(180deg) saturate(1.5);
+}

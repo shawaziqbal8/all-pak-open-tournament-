@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { MatchScore, TeamReg } from '../types';
 import { Socket } from 'socket.io-client';
-import { CheckCircle2, ChevronRight, MessageCircle, Send, ShieldAlert, XCircle, Plus, Calendar as CalendarIcon, Clock, Edit2, Lock, ImagePlus, MonitorPlay, Trash2, Upload } from 'lucide-react';
+import { CheckCircle2, ChevronRight, MessageCircle, Send, ShieldAlert, XCircle, Plus, Calendar as CalendarIcon, Clock, Edit2, Lock, ImagePlus, MonitorPlay, Trash2, Upload, AlertTriangle } from 'lucide-react';
 import { db, storage } from '../lib/firebase';
 import { doc, updateDoc, setDoc, deleteDoc, collection, onSnapshot, getDocs } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import TeamDetailModal from './TeamDetailModal';
 
 export interface AdImage {
   id: string;
@@ -17,8 +18,11 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
   const [password, setPassword] = useState('');
 
   const [activeTab, setActiveTab] = useState<'registrations' | 'bracket' | 'notifications' | 'analytics' | 'ads'>('registrations');
+  const [selectedTeam, setSelectedTeam] = useState<any | null>(null);
   const [notificationMsg, setNotificationMsg] = useState('');
+  const [alertMsg, setAlertMsg] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [isSettingAlert, setIsSettingAlert] = useState(false);
   
   // Schedule state
   const [newMatchTeam1, setNewMatchTeam1] = useState('');
@@ -108,6 +112,33 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
       alert('Failed to send notification.');
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const handleSetAlert = async () => {
+    if (!alertMsg) return;
+    setIsSettingAlert(true);
+    try {
+      await setDoc(doc(db, 'settings', 'liveAlert'), {
+        message: alertMsg,
+        active: true,
+        timestamp: new Date().toISOString()
+      });
+      setAlertMsg('');
+      alert('Live alert broadcasted!');
+    } catch(e) {
+      alert('Failed to set alert.');
+    } finally {
+      setIsSettingAlert(false);
+    }
+  };
+
+  const handleClearAlert = async () => {
+    try {
+      await setDoc(doc(db, 'settings', 'liveAlert'), { active: false }, { merge: true });
+      alert('Alert cleared.');
+    } catch(e) {
+      console.error(e);
     }
   };
 
@@ -285,7 +316,7 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
             {pendingTeams.length === 0 ? (
               <div className="text-slate-500 text-sm bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">No pending teams.</div>
             ) : pendingTeams.map(team => (
-              <div key={team.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-3 relative overflow-hidden">
+              <div key={team.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl space-y-3 relative overflow-hidden cursor-pointer hover:border-slate-700 transition-colors" onClick={() => setSelectedTeam(team)}>
                 <div className="absolute top-0 right-0 p-2 bg-orange-500/10 text-orange-500 text-xs font-bold rounded-bl-lg">Pending</div>
                 <h4 className="font-bold text-lg">{team.teamName}</h4>
                 <div className="text-sm text-slate-400 space-y-1">
@@ -294,7 +325,7 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
                   <p>Roster: {team.roster?.length || 0} players</p>
                   <p>Status: {team.paymentStatus}</p>
                 </div>
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-2 pt-2" onClick={e => e.stopPropagation()}>
                   <button onClick={() => handleVerify(team.id, true)} className="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-500 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center gap-2">
                     <CheckCircle2 className="w-4 h-4" /> Approve
                   </button>
@@ -311,12 +342,12 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
             {verifiedTeams.length === 0 ? (
               <div className="text-slate-500 text-sm bg-slate-900/50 border border-slate-800 p-4 rounded-xl text-center">No teams verified yet.</div>
             ) : verifiedTeams.map(team => (
-              <div key={team.id} className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl flex justify-between items-center group">
+              <div key={team.id} className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl flex justify-between items-center group cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => setSelectedTeam(team)}>
                 <div>
                   <h4 className="font-bold text-slate-200">{team.teamName}</h4>
                   <p className="text-xs text-slate-500">Contact: {team.contactDetails}</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                   <button onClick={() => handleWhatsAppContact(team.contactDetails, `Hi ${team.captainName}, your team ${team.teamName} is verified for the upcoming tournament!`)} className="text-slate-500 hover:text-green-500 p-2 opacity-0 group-hover:opacity-100 transition-all">
                     <MessageCircle className="w-4 h-4" />
                   </button>
@@ -448,30 +479,65 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
       )}
 
       {activeTab === 'notifications' && (
-        <div className="max-w-2xl bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-6">
-           <div>
-              <h2 className="text-xl font-bold text-white mb-2">WhatsApp Broadcast</h2>
-              <p className="text-slate-400 text-sm">Send schedule updates or rules to all verified team captains.</p>
-           </div>
-           
-           <div className="space-y-4">
-             <textarea 
-               value={notificationMsg}
-               onChange={(e) => setNotificationMsg(e.target.value)}
-               placeholder="Write your broadcast message here..."
-               className="w-full h-32 bg-slate-800 border border-slate-700 rounded-lg p-3 text-slate-200 outline-none focus:border-green-500 transition-colors resize-none"
-             />
-             <div className="flex justify-between items-center">
-               <span className="text-xs text-slate-500">Will be sent to {verifiedTeams.length} contacts</span>
-               <button 
-                 onClick={handleSendNotification}
-                 disabled={isSending || !notificationMsg || verifiedTeams.length === 0}
-                 className="flex items-center gap-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-2 px-6 rounded-lg transition-colors">
-                 <Send className="w-4 h-4" /> {isSending ? 'Sending...' : 'Send Broadcast'}
-               </button>
+        <div className="max-w-2xl space-y-6">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-6">
+            <div>
+                <h2 className="text-xl font-bold text-white mb-2">Live Alert Banner</h2>
+                <p className="text-slate-400 text-sm">Set an active banner visible to all connected users across the app.</p>
+            </div>
+            
+            <div className="space-y-4">
+               <textarea 
+                 value={alertMsg}
+                 onChange={(e) => setAlertMsg(e.target.value)}
+                 placeholder="E.g., Event delayed due to rain..."
+                 className="w-full h-20 bg-slate-800 border border-slate-700 rounded-lg p-3 text-slate-200 outline-none focus:border-orange-500 transition-colors resize-none"
+               />
+               <div className="flex justify-between items-center gap-4">
+                 <button 
+                   onClick={handleSetAlert}
+                   disabled={isSettingAlert || !alertMsg}
+                   className="flex-1 flex justify-center items-center gap-2 bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                   <AlertTriangle className="w-4 h-4" /> {isSettingAlert ? 'Setting...' : 'Set Active Alert'}
+                 </button>
+                 <button 
+                   onClick={handleClearAlert}
+                   className="flex-1 flex justify-center items-center gap-2 border border-slate-700 hover:border-slate-500 text-slate-400 hover:text-slate-200 py-2 px-6 rounded-lg transition-colors">
+                   Clear Alert
+                 </button>
+               </div>
+            </div>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-6">
+             <div>
+                <h2 className="text-xl font-bold text-white mb-2">WhatsApp Broadcast</h2>
+                <p className="text-slate-400 text-sm">Send schedule updates or rules to all verified team captains.</p>
              </div>
-           </div>
+             
+             <div className="space-y-4">
+               <textarea 
+                 value={notificationMsg}
+                 onChange={(e) => setNotificationMsg(e.target.value)}
+                 placeholder="Write your broadcast message here..."
+                 className="w-full h-32 bg-slate-800 border border-slate-700 rounded-lg p-3 text-slate-200 outline-none focus:border-green-500 transition-colors resize-none"
+               />
+               <div className="flex justify-between items-center">
+                 <span className="text-xs text-slate-500">Will be sent to {verifiedTeams.length} contacts</span>
+                 <button 
+                   onClick={handleSendNotification}
+                   disabled={isSending || !notificationMsg || verifiedTeams.length === 0}
+                   className="flex items-center gap-2 bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+                   <Send className="w-4 h-4" /> {isSending ? 'Sending...' : 'Send Broadcast'}
+                 </button>
+               </div>
+             </div>
+          </div>
         </div>
+      )}
+
+      {selectedTeam && (
+        <TeamDetailModal selectedTeam={selectedTeam} setSelectedTeam={setSelectedTeam} matches={matches} />
       )}
     </div>
   );

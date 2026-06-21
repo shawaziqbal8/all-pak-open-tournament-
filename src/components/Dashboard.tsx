@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MatchScore, TeamReg } from '../types';
-import { Activity, Calendar, Trophy, Users, BanknotesIcon as Banknotes, ShieldCheck, DollarSign, FileText, X } from 'lucide-react';
+import { Activity, Calendar, Trophy, Users, BanknotesIcon as Banknotes, ShieldCheck, DollarSign, FileText, X, Clock } from 'lucide-react';
 
 interface DashboardProps {
   matches: MatchScore[];
@@ -17,8 +17,58 @@ export default function Dashboard({ matches, teams }: DashboardProps) {
   const verifiedTeams = teams.filter(t => t.verified).length;
   const fundsRaised = verifiedTeams * 5000;
 
+  const targetDate = new Date('2026-07-02T00:00:00').getTime();
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const difference = targetDate - now;
+
+      if (difference > 0) {
+        setTimeLeft({
+          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+          minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
+          seconds: Math.floor((difference % (1000 * 60)) / 1000)
+        });
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="space-y-8">
+      <div className="bg-orange-600 border border-orange-500 p-6 rounded-xl relative overflow-hidden shadow-lg mb-8">
+        <div className="absolute top-0 right-0 p-4 opacity-20 translate-x-4 -translate-y-4">
+          <Clock className="w-32 h-32" />
+        </div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h2 className="text-2xl font-black text-white uppercase tracking-tight">Tournament Countdown</h2>
+            <p className="text-orange-200 font-medium tracking-wide">Starting 2 July</p>
+          </div>
+          <div className="flex items-center gap-2 sm:gap-4 text-center">
+            <div className="bg-black/20 backdrop-blur rounded-xl p-3 min-w-[70px]">
+              <p className="text-3xl font-black text-white">{timeLeft.days}</p>
+              <p className="text-[10px] font-bold text-orange-200 uppercase tracking-widest">Days</p>
+            </div>
+            <div className="bg-black/20 backdrop-blur rounded-xl p-3 min-w-[70px]">
+              <p className="text-3xl font-black text-white">{timeLeft.hours}</p>
+              <p className="text-[10px] font-bold text-orange-200 uppercase tracking-widest">Hours</p>
+            </div>
+            <div className="bg-black/20 backdrop-blur rounded-xl p-3 min-w-[70px]">
+              <p className="text-3xl font-black text-white">{timeLeft.minutes}</p>
+              <p className="text-[10px] font-bold text-orange-200 uppercase tracking-widest">Mins</p>
+            </div>
+            <div className="bg-black/20 backdrop-blur rounded-xl p-3 min-w-[70px]">
+               <p className="text-3xl font-black text-white">{timeLeft.seconds}</p>
+               <p className="text-[10px] font-bold text-orange-200 uppercase tracking-widest">Secs</p>
+            </div>
+          </div>
+        </div>
+      </div>
       <div>
         <h2 className="text-2xl font-black text-white mb-6">Tournament Overview</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

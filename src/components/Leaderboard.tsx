@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { MatchScore, TeamReg } from '../types';
+import { X, Trophy, History, Users, Activity } from 'lucide-react';
+import TeamDetailModal from './TeamDetailModal';
 
 export default function Leaderboard({ matches, teams }: { matches: MatchScore[], teams: TeamReg[] }) {
+  const [selectedTeam, setSelectedTeam] = useState<any | null>(null);
+
   // Simple calculation for volleyball: 
   // Points logic: win 3-0/3-1 = 3pts, win 3-2 = 2pts, loss 2-3 = 1pt. (Or just generic logic based on wins for now)
   
@@ -38,13 +42,15 @@ export default function Leaderboard({ matches, teams }: { matches: MatchScore[],
 
   standings.sort((a, b) => b.points - a.points || (b.setsWon - b.setsLost) - (a.setsWon - a.setsLost));
 
+  const teamMatches = selectedTeam ? matches.filter(m => m.team1 === selectedTeam.teamName || m.team2 === selectedTeam.teamName).sort((a,b) => (b.startTime ? new Date(b.startTime).getTime() : 0) - (a.startTime ? new Date(a.startTime).getTime() : 0)) : [];
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-black text-white">Tournament Standings</h2>
       
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300">
+          <table className="w-full text-left text-sm text-slate-300 relative">
             <thead className="bg-slate-800/50 text-slate-400 text-xs uppercase font-bold">
               <tr>
                 <th className="px-6 py-4">Pos</th>
@@ -58,8 +64,8 @@ export default function Leaderboard({ matches, teams }: { matches: MatchScore[],
             </thead>
             <tbody className="divide-y divide-slate-800/50">
               {standings.map((team, index) => (
-                <tr key={team.id} className="hover:bg-slate-800/20 transition-colors">
-                  <td className="px-6 py-4 font-mono text-slate-500">{index + 1}</td>
+                <tr key={team.id} className="hover:bg-slate-800 transition-colors cursor-pointer" onClick={() => setSelectedTeam(team)}>
+                  <td className="px-6 py-4 font-mono text-slate-500 group-hover:text-white transition-colors">{index + 1}</td>
                   <td className="px-6 py-4 font-bold text-white flex items-center gap-3">
                     {team.teamName}
                     {index === 0 && <span className="px-2 py-0.5 bg-orange-500/20 text-orange-500 text-[10px] uppercase rounded-full">Leaders</span>}
@@ -82,6 +88,10 @@ export default function Leaderboard({ matches, teams }: { matches: MatchScore[],
           </table>
         </div>
       </div>
+
+      {selectedTeam && (
+        <TeamDetailModal selectedTeam={selectedTeam} setSelectedTeam={setSelectedTeam} matches={matches} />
+      )}
     </div>
   );
 }
