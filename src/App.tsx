@@ -186,65 +186,65 @@ export default function App() {
           </div>
         </div>
       )}
-      <header className="flex flex-col md:flex-row md:items-center justify-between mb-8 pb-4 border-b border-slate-800 gap-4">
+      <header className="flex flex-col md:flex-row md:items-center justify-between mb-8 pb-6 border-b border-slate-800/60 gap-6">
         <div className="flex flex-col lg:flex-row lg:items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className="bg-orange-500/10 p-2 border border-orange-500/20 rounded-lg shrink-0">
-              <Trophy className="w-8 h-8 text-orange-500" />
+          <div className="flex items-center gap-4">
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-3 rounded-2xl shadow-lg shadow-orange-500/20 shrink-0">
+              <Trophy className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-xl md:text-3xl font-black tracking-tight text-white leading-tight uppercase">ALL PAKISTAN OPEN</h1>
-              <p className="text-xs text-orange-500 font-bold tracking-widest uppercase">Volleyball Tournament</p>
+              <h1 className="text-2xl md:text-4xl font-black tracking-tight text-white leading-none uppercase">ALL PAKISTAN OPEN</h1>
+              <p className="text-xs text-orange-500 font-bold tracking-[0.2em] uppercase mt-1">Volleyball Tournament</p>
             </div>
           </div>
-          <div className="hidden lg:flex items-center gap-6 text-xs text-slate-400 font-medium">
-            <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-full">
+          <div className="hidden lg:flex items-center gap-3 text-xs text-slate-400 font-medium ml-4">
+            <div className="flex items-center gap-2 bg-slate-900/50 border border-slate-800/80 px-4 py-2 rounded-full shadow-inner transition-colors hover:border-slate-700">
               <span className="text-orange-500">👑 Org:</span> Raham Iqbal Khan & Bakht Zeb
             </div>
-            <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-full">
+            <div className="flex items-center gap-2 bg-slate-900/50 border border-slate-800/80 px-4 py-2 rounded-full shadow-inner transition-colors hover:border-slate-700">
               <span className="text-orange-500">📞</span> 0306-0888584
             </div>
-            <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-full">
+            <div className="flex items-center gap-2 bg-slate-900/50 border border-slate-800/80 px-4 py-2 rounded-full shadow-inner transition-colors hover:border-slate-700">
               <span className="text-orange-500">🎗 Sponsor:</span> FGC
             </div>
           </div>
         </div>
         
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => setActiveTab('dashboard')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'dashboard' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}>
+        <div className="flex overflow-x-auto pb-2 -mx-2 px-2 md:pb-0 md:mx-0 md:px-0 gap-2 custom-scrollbar">
+          <button onClick={() => setActiveTab('dashboard')} className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${activeTab === 'dashboard' ? 'bg-white text-slate-900 shadow-md scale-105' : 'text-slate-400 hover:text-white hover:bg-slate-800/80'}`}>
             <LayoutDashboard className="w-4 h-4" /> <span className="hidden sm:inline">Overview</span>
           </button>
-          <button onClick={() => setActiveTab('leaderboard')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'leaderboard' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}>
+          <button onClick={() => setActiveTab('leaderboard')} className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${activeTab === 'leaderboard' ? 'bg-white text-slate-900 shadow-md scale-105' : 'text-slate-400 hover:text-white hover:bg-slate-800/80'}`}>
             <Target className="w-4 h-4" /> <span className="hidden sm:inline">Leaderboard</span>
           </button>
-          <button onClick={() => setActiveTab('schedule')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'schedule' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}>
+          <button onClick={() => setActiveTab('schedule')} className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${activeTab === 'schedule' ? 'bg-white text-slate-900 shadow-md scale-105' : 'text-slate-400 hover:text-white hover:bg-slate-800/80'}`}>
             <Calendar className="w-4 h-4" /> <span className="hidden sm:inline">Schedule</span>
           </button>
-          <button onClick={() => setActiveTab('venue')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'venue' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}>
+          <button onClick={() => setActiveTab('venue')} className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${activeTab === 'venue' ? 'bg-white text-slate-900 shadow-md scale-105' : 'text-slate-400 hover:text-white hover:bg-slate-800/80'}`}>
             <MapPin className="w-4 h-4" /> <span className="hidden sm:inline">Venue</span>
           </button>
-          <button onClick={() => setActiveTab('faq')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'faq' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}>
+          <button onClick={() => setActiveTab('faq')} className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${activeTab === 'faq' ? 'bg-white text-slate-900 shadow-md scale-105' : 'text-slate-400 hover:text-white hover:bg-slate-800/80'}`}>
             <HelpCircle className="w-4 h-4" /> <span className="hidden sm:inline">FAQ</span>
           </button>
-          <button onClick={() => setActiveTab('tickets')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'tickets' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}>
+          <button onClick={() => setActiveTab('tickets')} className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${activeTab === 'tickets' ? 'bg-white text-slate-900 shadow-md scale-105' : 'text-slate-400 hover:text-white hover:bg-slate-800/80'}`}>
             <Ticket className="w-4 h-4" /> <span className="hidden sm:inline">Tickets</span>
           </button>
-          <button onClick={() => setActiveTab('highlights')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'highlights' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}>
+          <button onClick={() => setActiveTab('highlights')} className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${activeTab === 'highlights' ? 'bg-white text-slate-900 shadow-md scale-105' : 'text-slate-400 hover:text-white hover:bg-slate-800/80'}`}>
             <FileText className="w-4 h-4" /> <span className="hidden sm:inline">Highlights</span>
           </button>
-          <button onClick={() => setActiveTab('scores')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'scores' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}>
+          <button onClick={() => setActiveTab('scores')} className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${activeTab === 'scores' ? 'bg-white text-slate-900 shadow-md scale-105' : 'text-slate-400 hover:text-white hover:bg-slate-800/80'}`}>
             <Zap className="w-4 h-4" /> <span className="hidden sm:inline">Live Scores</span>
           </button>
-          <button onClick={() => setActiveTab('playbook')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'playbook' ? 'bg-slate-800 text-white' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'}`}>
-            <PenTool className="w-4 h-4" /> <span className="hidden sm:inline">Playbook (Sync)</span>
+          <button onClick={() => setActiveTab('playbook')} className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${activeTab === 'playbook' ? 'bg-white text-slate-900 shadow-md scale-105' : 'text-slate-400 hover:text-white hover:bg-slate-800/80'}`}>
+            <PenTool className="w-4 h-4" /> <span className="hidden sm:inline">Playbook</span>
           </button>
-          <button onClick={() => setActiveTab('register')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'register' ? 'bg-orange-600 text-white' : 'bg-orange-500/10 text-orange-500 border border-orange-500/20 hover:bg-orange-500/20'}`}>
+          <button onClick={() => setActiveTab('register')} className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${activeTab === 'register' ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/30 scale-105' : 'bg-orange-500/10 text-orange-500 border border-orange-500/20 hover:bg-orange-500/20'}`}>
             <ClipboardList className="w-4 h-4" /> <span className="hidden sm:inline">Register Team</span>
           </button>
-          <button onClick={() => setActiveTab('status')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'status' ? 'bg-orange-600 text-white' : 'bg-orange-500/10 text-orange-500 border border-orange-500/20 hover:bg-orange-500/20'}`}>
+          <button onClick={() => setActiveTab('status')} className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${activeTab === 'status' ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/30 scale-105' : 'bg-orange-500/10 text-orange-500 border border-orange-500/20 hover:bg-orange-500/20'}`}>
             <ShieldCheck className="w-4 h-4" /> <span className="hidden sm:inline">Check Status</span>
           </button>
-          <button onClick={() => setActiveTab('admin')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'admin' ? 'bg-red-500/20 text-red-500' : 'text-slate-500 hover:text-red-400'}`}>
+          <button onClick={() => setActiveTab('admin')} className={`shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${activeTab === 'admin' ? 'bg-red-500 text-white shadow-lg shadow-red-500/30 scale-105' : 'text-slate-500 hover:text-red-400 hover:bg-slate-800/80'}`}>
             <ShieldCheck className="w-4 h-4" /> <span className="hidden sm:inline">Admin</span>
           </button>
         </div>

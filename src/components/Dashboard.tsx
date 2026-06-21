@@ -82,181 +82,187 @@ export default function Dashboard({ matches, teams, setActiveTab }: DashboardPro
 
   return (
     <div className="space-y-8">
-      <div className="bg-orange-600 border border-orange-500 p-6 rounded-xl relative overflow-hidden shadow-lg mb-8">
-        <div className="absolute top-0 right-0 p-4 opacity-20 translate-x-4 -translate-y-4">
-          <Clock className="w-32 h-32" />
+      <div className="bg-gradient-to-br from-orange-600 to-red-600 border border-orange-500/50 p-8 rounded-2xl relative overflow-hidden shadow-2xl mb-12">
+        <div className="absolute top-0 right-0 p-4 opacity-10 translate-x-8 -translate-y-8 pointer-events-none">
+          <Clock className="w-64 h-64" />
         </div>
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
           <div>
-            <h2 className="text-2xl font-black text-white uppercase tracking-tight">Tournament Countdown</h2>
-            <p className="text-orange-200 font-medium tracking-wide">Starting 2 July</p>
+            <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight mb-2">Tournament Countdown</h2>
+            <p className="text-orange-200 font-bold tracking-[0.2em] uppercase text-sm md:text-base">Starting 2 July</p>
           </div>
-          <div className="flex items-center gap-2 sm:gap-4 text-center">
-            <div className="bg-black/20 backdrop-blur rounded-xl p-3 min-w-[70px]">
-              <p className="text-3xl font-black text-white">{timeLeft.days}</p>
-              <p className="text-[10px] font-bold text-orange-200 uppercase tracking-widest">Days</p>
+          <div className="flex items-center gap-2 sm:gap-4 text-center justify-start lg:justify-end">
+            <div className="bg-black/30 backdrop-blur-md border border-white/10 rounded-2xl p-4 min-w-[80px] shadow-inner">
+              <p className="text-4xl font-black text-white">{timeLeft.days}</p>
+              <p className="text-[10px] font-black text-orange-200/80 uppercase tracking-widest mt-1">Days</p>
             </div>
-            <div className="bg-black/20 backdrop-blur rounded-xl p-3 min-w-[70px]">
-              <p className="text-3xl font-black text-white">{timeLeft.hours}</p>
-              <p className="text-[10px] font-bold text-orange-200 uppercase tracking-widest">Hours</p>
+            <div className="text-white/30 text-4xl font-black">:</div>
+            <div className="bg-black/30 backdrop-blur-md border border-white/10 rounded-2xl p-4 min-w-[80px] shadow-inner">
+              <p className="text-4xl font-black text-white">{timeLeft.hours}</p>
+              <p className="text-[10px] font-black text-orange-200/80 uppercase tracking-widest mt-1">Hours</p>
             </div>
-            <div className="bg-black/20 backdrop-blur rounded-xl p-3 min-w-[70px]">
-              <p className="text-3xl font-black text-white">{timeLeft.minutes}</p>
-              <p className="text-[10px] font-bold text-orange-200 uppercase tracking-widest">Mins</p>
+            <div className="text-white/30 text-4xl font-black">:</div>
+            <div className="bg-black/30 backdrop-blur-md border border-white/10 rounded-2xl p-4 min-w-[80px] shadow-inner">
+              <p className="text-4xl font-black text-white">{timeLeft.minutes}</p>
+              <p className="text-[10px] font-black text-orange-200/80 uppercase tracking-widest mt-1">Mins</p>
             </div>
-            <div className="bg-black/20 backdrop-blur rounded-xl p-3 min-w-[70px]">
-               <p className="text-3xl font-black text-white">{timeLeft.seconds}</p>
-               <p className="text-[10px] font-bold text-orange-200 uppercase tracking-widest">Secs</p>
+            <div className="text-white/30 text-4xl font-black">:</div>
+            <div className="bg-black/30 backdrop-blur-md border border-white/10 rounded-2xl p-4 min-w-[80px] shadow-inner">
+               <p className="text-4xl font-black text-white">{timeLeft.seconds}</p>
+               <p className="text-[10px] font-black text-orange-200/80 uppercase tracking-widest mt-1">Secs</p>
             </div>
           </div>
         </div>
       </div>
       
       {setActiveTab && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           <button 
             onClick={() => setActiveTab('register')}
-            className="bg-orange-600 hover:bg-orange-500 text-white p-6 rounded-xl flex items-center justify-between group transition-all shadow-lg hover:shadow-orange-500/20"
+            className="bg-gradient-to-br from-orange-500 to-orange-700 hover:from-orange-400 hover:to-orange-600 border border-orange-500/50 text-white p-8 rounded-2xl flex items-center justify-between group transition-all shadow-xl shadow-orange-500/20"
           >
             <div className="text-left">
-              <h3 className="text-2xl font-black mb-1 flex items-center gap-2"><Target className="w-6 h-6" /> Register Your Team</h3>
-              <p className="text-orange-200 text-sm font-medium">Secure your spot in the bracket</p>
+              <h3 className="text-3xl font-black mb-2 flex items-center gap-3"><Target className="w-8 h-8" /> Register Team</h3>
+              <p className="text-orange-100 font-medium tracking-wide">Secure your spot in the bracket</p>
             </div>
-            <div className="bg-white/10 p-3 rounded-full group-hover:scale-110 transition-transform">
-              <Users className="w-6 h-6" />
+            <div className="bg-black/20 p-4 rounded-full group-hover:scale-110 group-hover:rotate-6 transition-transform border border-white/10 shadow-inner">
+              <Users className="w-8 h-8" />
             </div>
           </button>
           
           <button 
             onClick={() => setActiveTab('tickets')}
-            className="bg-slate-800 hover:bg-slate-700 text-white p-6 rounded-xl flex items-center justify-between group transition-all shadow-lg hover:shadow-slate-700/50 border border-slate-700"
+            className="bg-gradient-to-br from-slate-800 to-slate-900 hover:from-slate-700 hover:to-slate-800 border border-slate-700 text-white p-8 rounded-2xl flex items-center justify-between group transition-all shadow-xl hover:shadow-slate-700/50"
           >
             <div className="text-left">
-              <h3 className="text-2xl font-black mb-1 flex items-center gap-2"><Zap className="w-6 h-6 text-orange-500" /> Buy Spectator Tickets</h3>
-              <p className="text-slate-400 text-sm font-medium">Get tickets for the main event</p>
+              <h3 className="text-3xl font-black mb-2 flex items-center gap-3"><Zap className="w-8 h-8 text-orange-500" /> Buy Tickets</h3>
+              <p className="text-slate-400 font-medium tracking-wide">Get tickets for the main event</p>
             </div>
-            <div className="bg-orange-500/10 text-orange-500 p-3 rounded-full group-hover:scale-110 transition-transform">
-              <DollarSign className="w-6 h-6" />
+            <div className="bg-slate-950 p-4 rounded-full group-hover:scale-110 group-hover:-rotate-6 transition-transform border border-slate-800 shadow-inner text-orange-500">
+              <DollarSign className="w-8 h-8" />
             </div>
           </button>
         </div>
       )}
 
-      <div>
-        <h2 className="text-2xl font-black text-white mb-6">Tournament Overview</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl flex items-center justify-between group hover:border-slate-700 transition-colors">
+      <div className="mb-12">
+        <h2 className="text-2xl font-black text-white mb-6 uppercase tracking-wider flex items-center gap-2"><LayoutDashboard className="w-6 h-6 text-orange-500" /> Tournament Overview</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex items-center justify-between group hover:border-slate-700 transition-colors shadow-lg">
             <div>
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Registered Teams</p>
+              <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Registered Teams</p>
               <div className="flex items-baseline gap-2">
-                <p className="text-3xl font-black text-white">{isLoading ? '-' : teams.length}</p>
-                {!isLoading && <p className="text-xs text-green-500 font-bold">({verifiedTeams} verified)</p>}
+                <p className="text-4xl font-black text-white">{isLoading ? '-' : teams.length}</p>
+                {!isLoading && <p className="text-xs text-emerald-400 font-bold bg-emerald-400/10 px-2 py-0.5 rounded-full">{verifiedTeams} verified</p>}
               </div>
             </div>
-            <div className="bg-blue-500/10 p-3 rounded-xl text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
-              <Users className="w-5 h-5" />
+            <div className="bg-blue-500/10 p-4 rounded-2xl text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors shadow-inner">
+              <Users className="w-6 h-6" />
             </div>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl flex items-center justify-between group hover:border-slate-700 transition-colors">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex items-center justify-between group hover:border-slate-700 transition-colors shadow-lg">
             <div>
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Funds Raised</p>
-              <p className="text-3xl font-black text-white">{isLoading ? '-' : `Rs. ${fundsRaised.toLocaleString()}`}</p>
+              <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Funds Raised</p>
+              <p className="text-4xl font-black text-white tracking-tight">{isLoading ? '-' : `Rs ${fundsRaised.toLocaleString()}`}</p>
             </div>
-            <div className="bg-green-500/10 p-3 rounded-xl text-green-500 group-hover:bg-green-500 group-hover:text-white transition-colors">
-              <DollarSign className="w-5 h-5" />
+            <div className="bg-emerald-500/10 p-4 rounded-2xl text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-colors shadow-inner">
+              <DollarSign className="w-6 h-6" />
             </div>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl flex items-center justify-between relative overflow-hidden group hover:border-orange-500/50 transition-colors">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex items-center justify-between relative overflow-hidden group hover:border-orange-500/50 transition-colors shadow-lg">
             {liveGames > 0 && <div className="absolute top-0 right-0 w-2 h-full bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.8)] animate-pulse"></div>}
             <div>
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Live Matches</p>
-              <p className="text-3xl font-black text-white">{isLoading ? '-' : liveGames}</p>
+              <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Live Matches</p>
+              <p className="text-4xl font-black text-white">{isLoading ? '-' : liveGames}</p>
             </div>
-            <div className={`p-3 rounded-xl transition-colors ${liveGames > 0 ? 'bg-red-500/20 text-red-500' : 'bg-slate-800 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300'}`}>
-              <Activity className="w-5 h-5" />
+            <div className={`p-4 rounded-2xl transition-colors shadow-inner ${liveGames > 0 ? 'bg-red-500/20 text-red-500' : 'bg-slate-800 text-slate-500 group-hover:bg-slate-700 group-hover:text-slate-300'}`}>
+              <Activity className="w-6 h-6" />
             </div>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl flex items-center justify-between group hover:border-slate-700 transition-colors">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex items-center justify-between group hover:border-slate-700 transition-colors shadow-lg">
             <div>
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Upcoming Games</p>
-              <p className="text-3xl font-black text-white">{isLoading ? '-' : upcomingGames}</p>
+              <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Upcoming Games</p>
+              <p className="text-4xl font-black text-white">{isLoading ? '-' : upcomingGames}</p>
             </div>
-            <div className="bg-orange-500/10 p-3 rounded-xl text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-colors">
-              <Calendar className="w-5 h-5" />
+            <div className="bg-orange-500/10 p-4 rounded-2xl text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-colors shadow-inner">
+              <Calendar className="w-6 h-6" />
             </div>
           </div>
         </div>
       </div>
 
-      <div>
-        <h2 className="text-2xl font-black text-white mb-6">Top Tournament Statistics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl flex items-center justify-between group hover:border-slate-700 transition-colors">
+      <div className="mb-12">
+        <h2 className="text-2xl font-black text-white mb-6 uppercase tracking-wider flex items-center gap-2"><Trophy className="w-6 h-6 text-orange-500" /> Top Tournament Statistics</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl flex items-center justify-between group hover:border-slate-700 transition-colors shadow-lg">
             <div>
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Most Points Scored</p>
-              <p className="text-3xl font-black text-white">{topScoringTeam.name}</p>
-              <p className="text-sm text-green-500 font-bold mt-1">{topScoringTeam.points} pts accumulated</p>
+              <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Most Points Scored</p>
+              <p className="text-4xl font-black text-white truncate max-w-[200px]" title={topScoringTeam.name}>{topScoringTeam.name}</p>
+              <p className="text-sm text-emerald-400 font-bold mt-2 flex items-center gap-1"><Zap className="w-4 h-4" /> {topScoringTeam.points} pts accumulated</p>
             </div>
-            <div className="bg-orange-500/10 p-4 rounded-xl text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-colors">
-              <Zap className="w-6 h-6" />
+            <div className="bg-orange-500/10 p-5 rounded-2xl text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-colors shadow-inner">
+              <Zap className="w-8 h-8" />
             </div>
           </div>
           
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl flex items-center justify-between group hover:border-slate-700 transition-colors">
+          <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl flex items-center justify-between group hover:border-slate-700 transition-colors shadow-lg">
             <div>
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Highest Set Win Percentage</p>
-              <p className="text-3xl font-black text-white">{topSetWinTeam.name}</p>
-              <p className="text-sm text-blue-500 font-bold mt-1">{topSetWinTeam.percentage.toFixed(1)}% win rate</p>
+              <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Highest Win Percentage</p>
+              <p className="text-4xl font-black text-white truncate max-w-[200px]" title={topSetWinTeam.name}>{topSetWinTeam.name}</p>
+              <p className="text-sm text-blue-400 font-bold mt-2 flex items-center gap-1"><Target className="w-4 h-4" /> {topSetWinTeam.percentage.toFixed(1)}% win rate</p>
             </div>
-            <div className="bg-blue-500/10 p-4 rounded-xl text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors">
-              <Target className="w-6 h-6" />
+            <div className="bg-blue-500/10 p-5 rounded-2xl text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors shadow-inner">
+              <Target className="w-8 h-8" />
             </div>
           </div>
         </div>
       </div>
 
-      <div>
-        <h2 className="text-2xl font-black text-white mb-6">Registered Teams Profiles</h2>
+      <div className="mb-12">
+        <h2 className="text-2xl font-black text-white mb-6 uppercase tracking-wider flex items-center gap-2"><Users className="w-6 h-6 text-orange-500" /> Registered Teams Profiles</h2>
         {teams.length === 0 ? (
-          <div className="bg-slate-900 border border-slate-800 p-8 rounded-xl text-center">
+          <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl text-center shadow-lg">
             <p className="text-slate-500">No teams registered yet.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {teams.map(team => (
-              <div key={team.id} className="bg-slate-900 border border-slate-800 p-6 rounded-xl hover:border-slate-700 transition-all group overflow-hidden" tabIndex={0}>
-                <div className="flex justify-between items-start mb-4">
+              <div key={team.id} className="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-slate-700 transition-all group overflow-hidden shadow-lg relative" tabIndex={0}>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/5 to-transparent rounded-full -mr-16 -mt-16 pointer-events-none group-hover:scale-150 transition-transform duration-500"></div>
+                <div className="flex justify-between items-start mb-6 relative z-10">
                   <div>
-                    <h3 className="text-xl font-bold text-white mb-1 group-hover:text-orange-500 transition-colors">{team.teamName}</h3>
-                    <p className="text-sm text-slate-400">Capt: {team.captainName}</p>
+                    <h3 className="text-xl font-black text-white mb-1 group-hover:text-orange-400 transition-colors">{team.teamName}</h3>
+                    <p className="text-sm text-slate-400 flex items-center gap-2">
+                       <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Capt</span> {team.captainName}
+                    </p>
                   </div>
-                  <div className={`text-xs font-bold px-2 py-1 rounded border ${team.verified ? 'bg-green-500/10 text-green-500 border-green-500/20' : 'bg-orange-500/10 text-orange-500 border-orange-500/20'}`}>
+                  <div className={`text-[10px] uppercase tracking-widest font-black px-2 py-1 rounded bg-slate-950 border ${team.verified ? 'text-emerald-400 border-emerald-500/30' : 'text-orange-400 border-orange-500/30'}`}>
                     {team.verified ? 'Verified' : 'Pending'}
                   </div>
                 </div>
                 
-                <div className="pt-4 border-t border-slate-800">
-                  <details className="cursor-pointer group/details">
-                    <summary className="text-sm font-bold text-slate-300 hover:text-white transition-colors flex items-center justify-between outline-none">
-                      View Player Roster ({team.roster?.length || 0})
+                <div className="pt-4 border-t border-slate-800 relative z-10">
+                  <details className="cursor-pointer group/details [&_summary::-webkit-details-marker]:hidden">
+                     <summary className="text-sm font-bold text-slate-300 hover:text-white transition-colors flex items-center justify-between outline-none bg-slate-950 p-3 rounded-xl border border-slate-800">
+                      Roster ({team.roster?.length || 0})
                        <span className="text-slate-500 group-open/details:rotate-180 transition-transform">▼</span>
-                    </summary>
-                    <div className="mt-4 space-y-2 max-h-40 overflow-y-auto custom-scrollbar pr-2">
+                     </summary>
+                     <div className="mt-2 space-y-1 max-h-48 overflow-y-auto custom-scrollbar pr-2 bg-slate-950/50 p-2 rounded-xl">
                        {team.roster && team.roster.length > 0 ? team.roster.map((player: any, i: number) => (
-                         <div key={i} className="flex justify-between items-center text-sm py-1 border-b border-slate-800/50 last:border-0">
-                           <span className="text-slate-300 flex items-center gap-2">
-                             <div className="w-5 h-5 rounded bg-slate-800 text-slate-500 flex items-center justify-center text-[10px]">{i + 1}</div>
+                         <div key={i} className="flex justify-between items-center text-sm p-2 hover:bg-slate-800/50 rounded-lg transition-colors">
+                           <span className="text-slate-300 flex items-center gap-3">
+                             <div className="w-5 h-5 rounded-full bg-slate-800 text-slate-500 flex items-center justify-center text-[10px] font-bold">{i + 1}</div>
                              {player.name || player.playerName || 'Unknown'}
                            </span>
-                           {player.jerseyNumber && <span className="text-orange-500 font-mono text-xs bg-orange-500/10 px-1.5 rounded">#{player.jerseyNumber}</span>}
+                           {player.jerseyNumber && <span className="text-orange-400 font-mono text-xs bg-orange-500/10 px-2 py-0.5 rounded font-bold border border-orange-500/20">#{player.jerseyNumber}</span>}
                          </div>
                        )) : (
-                         <div className="text-sm text-slate-500 italic pb-2">No players listed.</div>
+                         <div className="text-sm text-slate-500 italic p-2 text-center">No players listed.</div>
                        )}
-                    </div>
+                     </div>
                   </details>
                 </div>
               </div>
@@ -265,14 +271,17 @@ export default function Dashboard({ matches, teams, setActiveTab }: DashboardPro
         )}
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 p-8 rounded-xl flex items-center justify-between">
-         <div>
-           <h3 className="text-xl font-bold text-white mb-2">Official Rules & Guidelines</h3>
-           <p className="text-slate-400 text-sm">Review the tournament format, rules, and conduct regulations.</p>
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 border border-slate-700 p-8 rounded-2xl flex flex-col sm:flex-row items-center justify-between shadow-2xl relative overflow-hidden">
+         <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+            <FileText className="w-48 h-48" />
          </div>
-         <button onClick={() => setRulesOpen(true)} className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold py-3 px-6 rounded-xl transition-colors">
-           <FileText className="w-5 h-5 text-orange-500" />
-           View Tournament Rules
+         <div className="relative z-10 text-center sm:text-left mb-6 sm:mb-0">
+           <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-wide">Official Rules & Guidelines</h3>
+           <p className="text-slate-400 text-sm max-w-md">Review the tournament format, rules, and conduct regulations to ensure your team is well-prepared and fully compliant.</p>
+         </div>
+         <button onClick={() => setRulesOpen(true)} className="relative z-10 flex items-center justify-center gap-2 bg-white text-slate-900 hover:bg-slate-200 font-bold py-4 px-8 rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 shrink-0 w-full sm:w-auto">
+           <FileText className="w-5 h-5 text-orange-600" />
+           View Official Rules
          </button>
       </div>
 
