@@ -9,12 +9,6 @@ interface DashboardProps {
 
 export default function Dashboard({ matches, teams }: DashboardProps) {
   const [showAd, setShowAd] = useState(true);
-  
-  useEffect(() => {
-    // Advertisement disappears after 1 hour (simulated here as 10s for preview)
-    const timer = setTimeout(() => setShowAd(false), 10000);
-    return () => clearTimeout(timer);
-  }, []);
 
   const liveGames = matches.filter(m => m.status === 'live').length;
   const upcomingGames = matches.filter(m => m.status === 'upcoming').length;

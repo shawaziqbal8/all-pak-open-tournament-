@@ -37,17 +37,64 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    let isSubscribed = true;
+
+    // Seed mock teams and matches if none exist
+    const seedMockData = async () => {
+      try {
+        const teamsSnap = await getDocs(collection(db, 'teams'));
+        if (teamsSnap.empty) {
+          console.log("Seeding mock teams...");
+          const mockTeams: TeamReg[] = [
+            { id: 't1', teamName: 'Lahore Eagles', captainName: 'Ali Khan', contactDetails: '+923001234567', paymentStatus: 'paid', verified: true, roster: [] },
+            { id: 't2', teamName: 'Karachi Falcons', captainName: 'Usman Tariq', contactDetails: '+923011234567', paymentStatus: 'paid', verified: true, roster: [] },
+            { id: 't3', teamName: 'Islamabad United', captainName: 'Zain Malik', contactDetails: '+923021234567', paymentStatus: 'paid', verified: true, roster: [] },
+            { id: 't4', teamName: 'Peshawar Zalmi', captainName: 'Omar Afridi', contactDetails: '+923031234567', paymentStatus: 'paid', verified: true, roster: [] },
+            { id: 't5', teamName: 'Quetta Gladiators', captainName: 'Bilal Ahmed', contactDetails: '+923041234567', paymentStatus: 'paid', verified: true, roster: [] },
+            { id: 't6', teamName: 'Multan Sultans', captainName: 'Shahid Mehmood', contactDetails: '+923051234567', paymentStatus: 'paid', verified: true, roster: [] },
+            { id: 't7', teamName: 'Faisalabad Wolves', captainName: 'Hassan Raza', contactDetails: '+923061234567', paymentStatus: 'paid', verified: true, roster: [] },
+            { id: 't8', teamName: 'Rawalpindi Royals', captainName: 'Kamran Akmal', contactDetails: '+923071234567', paymentStatus: 'paid', verified: true, roster: [] }
+          ];
+          for (const t of mockTeams) {
+            await setDoc(doc(db, 'teams', t.id), t);
+          }
+        }
+
+        const matchesSnap = await getDocs(collection(db, 'matches'));
+        if (matchesSnap.empty) {
+          console.log("Seeding mock matches...");
+          const today = new Date().toISOString();
+          const mockMatches: MatchScore[] = [
+            { id: 'm1', team1: 'Lahore Eagles', team2: 'Karachi Falcons', sets1: 1, sets2: 0, points1: 22, points2: 19, status: 'live', startTime: today },
+            { id: 'm2', team1: 'Islamabad United', team2: 'Peshawar Zalmi', sets1: 0, sets2: 0, points1: 0, points2: 0, status: 'upcoming', startTime: new Date(Date.now() + 86400000).toISOString() },
+            { id: 'm3', team1: 'Quetta Gladiators', team2: 'Multan Sultans', sets1: 3, sets2: 1, points1: 25, points2: 18, status: 'finished', startTime: new Date(Date.now() - 86400000).toISOString() }
+          ];
+          for (const m of mockMatches) {
+            await setDoc(doc(db, 'matches', m.id), m);
+          }
+        }
+      } catch (err) {
+        console.error("Error seeding data:", err);
+      }
+    };
+    seedMockData();
+
     const unsubMatches = onSnapshot(collection(db, 'matches'), (snapshot) => {
       const dbMatches = snapshot.docs.map(doc => doc.data() as MatchScore);
-      setMatches(dbMatches.sort((a,b) => (b.startTime ? new Date(b.startTime).getTime() : 0) - (a.startTime ? new Date(a.startTime).getTime() : 0)));
+      if (isSubscribed) setMatches(dbMatches.sort((a,b) => (b.startTime ? new Date(b.startTime).getTime() : 0) - (a.startTime ? new Date(a.startTime).getTime() : 0)));
+    }, (error) => {
+      console.error("Error fetching matches: ", error);
     });
     
     const unsubTeams = onSnapshot(collection(db, 'teams'), (snapshot) => {
       const dbTeams = snapshot.docs.map(doc => doc.data() as TeamReg);
-      setTeams(dbTeams);
+      if (isSubscribed) setTeams(dbTeams);
+    }, (error) => {
+      console.error("Error fetching teams: ", error);
     });
 
     return () => {
+      isSubscribed = false;
       unsubMatches();
       unsubTeams();
     }

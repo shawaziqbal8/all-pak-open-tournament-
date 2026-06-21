@@ -1,16 +1,54 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { MatchScore } from '../types';
-import { Calendar as CalendarIcon, Clock, MapPin } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, MapPin, Bell, BellRing } from 'lucide-react';
 import { DateTime } from 'luxon';
 
 export default function Schedule({ matches }: { matches: MatchScore[] }) {
+  const [alertsEnabled, setAlertsEnabled] = useState(false);
+
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      setAlertsEnabled(true);
+    }
+  }, []);
+
+  const handleSubscribe = async () => {
+    if (!('Notification' in window)) {
+      alert('This browser does not support desktop notifications.');
+      return;
+    }
+
+    if (Notification.permission === 'granted') {
+      alert('You are already subscribed to match alerts!');
+      setAlertsEnabled(true);
+    } else if (Notification.permission !== 'denied') {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+         setAlertsEnabled(true);
+         new Notification('Match Alerts Enabled!', {
+            body: 'You will receive game reminders before scheduled matches begin.',
+         });
+      }
+    } else {
+      alert('You previously denied notifications. Please enable them in your browser settings.');
+    }
+  };
+
   const upcomingMatches = matches.filter(m => m.status === 'upcoming');
   const pastMatches = matches.filter(m => m.status === 'finished');
 
   return (
     <div className="space-y-10">
       <div>
-        <h2 className="text-2xl font-black text-white mb-6">Upcoming Matches</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+          <h2 className="text-2xl font-black text-white">Upcoming Matches</h2>
+          <button 
+            onClick={handleSubscribe} 
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-colors ${alertsEnabled ? 'bg-orange-500/20 text-orange-500 border border-orange-500/30' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}>
+            {alertsEnabled ? <BellRing className="w-4 h-4 animate-pulse" /> : <Bell className="w-4 h-4" />}
+            {alertsEnabled ? 'Alerts Enabled' : 'Subscribe to Match Alerts'}
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {upcomingMatches.length === 0 ? (
              <div className="col-span-full bg-slate-900 border border-slate-800 p-8 rounded-xl text-center text-slate-500">
