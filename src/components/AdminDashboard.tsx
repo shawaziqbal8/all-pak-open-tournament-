@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { MatchScore, TeamReg } from '../types';
 import { Socket } from 'socket.io-client';
 import { CheckCircle2, ChevronRight, MessageCircle, Send, ShieldAlert, XCircle, Plus, Calendar as CalendarIcon, Clock, Edit2, Lock, ImagePlus, MonitorPlay, Trash2, Upload, AlertTriangle, Download } from 'lucide-react';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../lib/firebase';
 import { doc, updateDoc, setDoc, deleteDoc, collection, onSnapshot, getDocs } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import TeamDetailModal from './TeamDetailModal';
 
 import BracketTree from './BracketTree';
@@ -38,6 +38,16 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
   // Ads state
   const [ads, setAds] = useState<AdImage[]>([]);
   const [newAdUrl, setNewAdUrl] = useState('');
+  
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [uploadLogs, setUploadLogs] = useState<string[]>([]);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewType, setPreviewType] = useState<'image' | 'video' | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const addUploadLog = (msg: string) => {
+    setUploadLogs(prev => [...prev, `${new Date().toLocaleTimeString()} - ${msg}`]);
+  };
 
   useEffect(() => {
     let isSubscribed = true;
@@ -67,30 +77,96 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
-    try {
-      const fileRef = ref(storage, `ads/${Date.now()}_${file.name}`);
-      await uploadBytes(fileRef, file);
-      const downloadUrl = await getDownloadURL(fileRef);
-      
-      const id = 'ad_' + Date.now();
-      await setDoc(doc(db, 'ads', id), { 
-        url: downloadUrl, 
-        active: true,
-        type: file.type.startsWith('video/') ? 'video' : 'image'
-      });
-      
-      if (e.target) e.target.value = '';
-    } catch(err) {
-      console.error(err);
-      alert('Failed to process/upload media. Make sure Firebase Storage rules are public or use the URL option instead.');
-    } finally {
-      setIsUploading(false);
+    setSelectedFile(file);
+    setUploadLogs([]);
+    addUploadLog(`File selected: ${file.name} (${(file.size / (1024 * 1024)).toFixed(2)} MB)`);
+
+    const isVideo = file.type.startsWith('video/');
+    setPreviewType(isVideo ? 'video' : 'image');
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setPreviewUrl(event.target?.result as string);
+      addUploadLog('Client-side preview generated successfully.');
+    };
+    reader.onerror = () => {
+      addUploadLog('Error reading file for preview.');
     }
+    reader.readAsDataURL(file);
+  };
+
+  const cancelUpload = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setPreviewType(null);
+    setUploadProgress(0);
+    setUploadLogs([]);
+    setIsUploading(false);
+  };
+
+  const handleUploadFile = async () => {
+    if (!selectedFile) return;
+
+    setIsUploading(true);
+    addUploadLog('Upload Initiated using resumable storage SDK.');
+
+    const storageRef = ref(storage, `ads/${Date.now()}_${selectedFile.name}`);
+    const uploadTask = uploadBytesResumable(storageRef, selectedFile);
+
+    uploadTask.on('state_changed', 
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setUploadProgress(progress);
+        
+        switch (snapshot.state) {
+          case 'paused':
+            addUploadLog('Upload is paused');
+            break;
+          case 'running':
+            // we don't log every running state to avoid spamming
+            break;
+        }
+      }, 
+      (error) => {
+        setIsUploading(false);
+        if (error.code === 'storage/retry-limit-exceeded') {
+          addUploadLog('Network Timeout or Max Retry Limit Exceeded.');
+        } else if (error.code === 'storage/unauthorized') {
+          addUploadLog('Permission Denied. Target storage rules may be missing.');
+        } else {
+          addUploadLog(`Upload Failed: ${error.message}`);
+        }
+      }, 
+      async () => {
+        addUploadLog('File successfully uploaded to Firebase Storage.');
+        try {
+          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+          addUploadLog('Download URL acquired. Saving to database...');
+
+          const id = 'ad_' + Date.now();
+          await setDoc(doc(db, 'ads', id), { 
+            url: downloadUrl, 
+            active: true, 
+            type: previewType 
+          });
+
+          addUploadLog('Ad successfully registered in database.');
+          setTimeout(() => {
+            setSelectedFile(null);
+            setPreviewUrl(null);
+            setUploadProgress(0);
+            setIsUploading(false);
+          }, 2000);
+        } catch (err) {
+          addUploadLog(`Database save failed: ${err}`);
+          setIsUploading(false);
+        }
+      }
+    );
   };
 
   const handleToggleAd = async (id: string, active: boolean) => {
@@ -401,14 +477,58 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
             <div>
               <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2"><ImagePlus className="w-5 h-5 text-orange-500" /> Upload Advertisements</h3>
-              <p className="text-sm text-slate-400">Upload an image or video file, or add an external URL to display sponsor banners.</p>
+              <p className="text-sm text-slate-400">Upload an image or video file securely using Firebase Resumable Storage, or add an external URL.</p>
             </div>
             
             <div className="flex flex-col gap-4 w-full md:w-auto">
-              <label className="bg-orange-600 hover:bg-orange-500 text-white font-bold px-6 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer w-full">
-                <Upload className="w-5 h-5" /> {isUploading ? 'Uploading...' : 'Upload Media'}
-                <input type="file" accept="image/*,video/*" onChange={handleFileUpload} className="hidden" disabled={isUploading} />
-              </label>
+              {!selectedFile ? (
+                <label className="bg-orange-600 hover:bg-orange-500 text-white font-bold px-6 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer w-full">
+                  <Upload className="w-5 h-5" /> Select Media
+                  <input type="file" accept="image/*,video/*" onChange={handleFileSelect} className="hidden" />
+                </label>
+              ) : (
+                <div className="flex flex-col gap-2 w-full max-w-sm">
+                  {previewUrl && (
+                    <div className="aspect-video w-full bg-slate-950 rounded-lg overflow-hidden border border-slate-700 relative">
+                       {previewType === 'video' ? (
+                         <video src={previewUrl} controls className="w-full h-full object-cover" />
+                       ) : (
+                         <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                       )}
+                       <div className="absolute top-2 left-2 bg-black/60 px-2 rounded text-xs font-bold text-orange-400">Preview</div>
+                    </div>
+                  )}
+                  
+                  {isUploading && (
+                    <div className="w-full bg-slate-800 rounded-full h-2.5 mb-2 overflow-hidden border border-slate-700">
+                      <div className="bg-orange-500 h-2.5 transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={handleUploadFile} 
+                      disabled={isUploading}
+                      className="flex-1 bg-green-600 hover:bg-green-500 disabled:bg-slate-700 text-white font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                      {isUploading ? `${Math.round(uploadProgress)}% Uploading...` : 'Confirm Upload'}
+                    </button>
+                    <button 
+                      onClick={cancelUpload} 
+                      disabled={isUploading}
+                      className="bg-slate-800 hover:bg-slate-700 disabled:bg-slate-800 disabled:text-slate-600 text-white px-4 py-2 rounded-lg transition-colors"
+                    >
+                      <XCircle className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {uploadLogs.length > 0 && (
+                    <div className="bg-slate-950 border border-slate-800 p-2 rounded-lg mt-2 h-24 overflow-y-auto font-mono text-[10px] text-slate-400 space-y-1">
+                      {uploadLogs.map((log, i) => <div key={i}>{log}</div>)}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="flex items-center gap-2 text-slate-500 text-xs font-bold uppercase tracking-widest justify-center">
                 <div className="w-12 h-px bg-slate-800"></div>

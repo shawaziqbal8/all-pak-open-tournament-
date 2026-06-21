@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { MatchScore } from '../types';
-import { Calendar as CalendarIcon, Clock, MapPin, Bell, BellRing, Download } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, MapPin, Bell, BellRing, Download, AlarmClock } from 'lucide-react';
 import { DateTime } from 'luxon';
 
 export default function Schedule({ matches }: { matches: MatchScore[] }) {
   const [alertsEnabled, setAlertsEnabled] = useState(false);
+  const [reminders, setReminders] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if ('Notification' in window && Notification.permission === 'granted') {
@@ -31,6 +32,50 @@ export default function Schedule({ matches }: { matches: MatchScore[] }) {
       }
     } else {
       alert('You previously denied notifications. Please enable them in your browser settings.');
+    }
+  };
+
+  const handleRemindMe = async (match: MatchScore) => {
+    if (!('Notification' in window)) {
+      alert('This browser does not support desktop notifications.');
+      return;
+    }
+
+    let permission = Notification.permission;
+    if (permission !== 'granted' && permission !== 'denied') {
+      permission = await Notification.requestPermission();
+    }
+
+    if (permission === 'granted') {
+      setAlertsEnabled(true);
+      if (!match.startTime) return;
+      
+      const startObj = DateTime.fromISO(match.startTime);
+      const now = DateTime.now();
+      const timeUntilStartMs = startObj.diff(now).toMillis();
+      const thirtyMinsMs = 30 * 60 * 1000;
+
+      if (timeUntilStartMs > thirtyMinsMs) {
+        setReminders(prev => ({ ...prev, [match.id]: true }));
+        const delay = timeUntilStartMs - thirtyMinsMs;
+        
+        setTimeout(() => {
+          new Notification('Match Starting Soon!', {
+            body: `${match.team1} vs ${match.team2} begins in 30 minutes!`,
+          });
+        }, delay);
+        
+        alert(`Reminder set! You will be notified 30 minutes before ${match.team1} vs ${match.team2} starts. Note: Keep this tab open to receive the alert.`);
+      } else if (timeUntilStartMs > 0) {
+        alert('Match is starting in less than 30 minutes!');
+        new Notification('Match Starting Soon!', {
+          body: `${match.team1} vs ${match.team2} is scheduled right now or very soon.`,
+        });
+      } else {
+        alert('This match has already started or passed.');
+      }
+    } else {
+      alert('Please enable notification permissions to set reminders.');
     }
   };
 
@@ -103,18 +148,29 @@ export default function Schedule({ matches }: { matches: MatchScore[] }) {
                 <span className="text-slate-600 text-sm font-black italic px-4">VS</span>
                 <span className="font-bold text-lg text-slate-200">{match.team2}</span>
               </div>
-              <div className="mt-5 pt-3 border-t border-slate-800/50 flex items-center justify-between text-xs text-slate-500">
+              <div className="mt-5 pt-3 border-t border-slate-800/50 flex flex-wrap items-center justify-between gap-y-2 text-xs text-slate-500">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-3 h-3" /> Center Court
                 </div>
-                {match.startTime && (
-                  <button 
-                    onClick={() => exportToICS(match)}
-                    className="flex items-center gap-1 text-orange-500 hover:text-orange-400 font-bold transition-colors"
-                  >
-                    <Download className="w-3 h-3" /> Export to Calendar
-                  </button>
-                )}
+                <div className="flex items-center gap-3">
+                  {match.startTime && (
+                    <>
+                      <button 
+                        onClick={() => handleRemindMe(match)}
+                        disabled={reminders[match.id]}
+                        className={`flex items-center gap-1 font-bold transition-colors ${reminders[match.id] ? 'text-green-500' : 'text-slate-400 hover:text-white'}`}
+                      >
+                        <AlarmClock className="w-3 h-3" /> {reminders[match.id] ? 'Reminder Set' : 'Remind Me'}
+                      </button>
+                      <button 
+                        onClick={() => exportToICS(match)}
+                        className="flex items-center gap-1 text-orange-500 hover:text-orange-400 font-bold transition-colors"
+                      >
+                        <Download className="w-3 h-3" /> Export
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           ))}
