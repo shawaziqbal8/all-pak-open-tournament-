@@ -7,5 +7,14 @@ service cloud.firestore {
     match /teams/{document=**} {
       allow read, write: if true;
     }
+    match /ads/{document=**} {
+      allow read, write: if true;
+    }
+    match /settings/{document=**} {
+      allow read, write: if true;
+    }
+    match /tickets/{document=**} {
+      allow read, write: if true;
+    }
   }
 }
