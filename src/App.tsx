@@ -4,6 +4,7 @@ import { Users, Zap, LayoutDashboard, ClipboardList, Target, ShieldCheck, Trophy
 import { AppState, MatchScore, TeamReg } from './types';
 import Dashboard from './components/Dashboard';
 import RegistrationForm from './components/RegistrationForm';
+import RegistrationStatus from './components/RegistrationStatus';
 import ScoreTracker from './components/ScoreTracker';
 import AdminDashboard from './components/AdminDashboard';
 import Leaderboard from './components/Leaderboard';
@@ -18,7 +19,7 @@ import { db } from './lib/firebase';
 import { collection, onSnapshot, getDocs, setDoc, doc } from 'firebase/firestore';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'scores' | 'register' | 'admin' | 'leaderboard' | 'schedule' | 'playbook' | 'tickets' | 'venue' | 'highlights' | 'faq'>(() => {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'scores' | 'register' | 'status' | 'admin' | 'leaderboard' | 'schedule' | 'playbook' | 'tickets' | 'venue' | 'highlights' | 'faq'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       if (params.get('success') === 'true' || params.get('canceled') === 'true') {
@@ -240,6 +241,9 @@ export default function App() {
           <button onClick={() => setActiveTab('register')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'register' ? 'bg-orange-600 text-white' : 'bg-orange-500/10 text-orange-500 border border-orange-500/20 hover:bg-orange-500/20'}`}>
             <ClipboardList className="w-4 h-4" /> <span className="hidden sm:inline">Register Team</span>
           </button>
+          <button onClick={() => setActiveTab('status')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'status' ? 'bg-orange-600 text-white' : 'bg-orange-500/10 text-orange-500 border border-orange-500/20 hover:bg-orange-500/20'}`}>
+            <ShieldCheck className="w-4 h-4" /> <span className="hidden sm:inline">Check Status</span>
+          </button>
           <button onClick={() => setActiveTab('admin')} className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${activeTab === 'admin' ? 'bg-red-500/20 text-red-500' : 'text-slate-500 hover:text-red-400'}`}>
             <ShieldCheck className="w-4 h-4" /> <span className="hidden sm:inline">Admin</span>
           </button>
@@ -278,6 +282,7 @@ export default function App() {
         {activeTab === 'scores' && <ScoreTracker matches={matches} socket={socketRef.current} />}
         {activeTab === 'playbook' && <Playbook socket={socketRef.current} usersConnected={usersConnected} />}
         {activeTab === 'register' && <RegistrationForm socket={socketRef.current} />}
+        {activeTab === 'status' && <RegistrationStatus />}
         {activeTab === 'admin' && <AdminDashboard matches={matches} teams={teams} socket={socketRef.current} />}
       </main>
       

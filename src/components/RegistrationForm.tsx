@@ -71,24 +71,11 @@ export default function RegistrationForm({ socket }: RegistrationFormProps) {
         verified: false
       });
 
-      const res = await fetch('/api/checkout', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ teamId: id, teamName })
-      });
-      const data = await res.json();
-      
-      if (data.url) {
-        window.location.href = data.url;
-      } else if (data.success) {
-        await updateDoc(doc(db, 'teams', id), { paymentStatus: 'paid' });
-        setStep(4);
-      } else {
-        alert('Payment processing failed.');
-      }
+      // No Stripe, just directly to success screen
+      setStep(4);
     } catch (e) {
       console.error(e);
-      alert('Payment processing failed. Please try again.');
+      alert('Registration failed. Please try again.');
     } finally {
       setIsProcessingPayment(false);
     }
@@ -196,28 +183,35 @@ export default function RegistrationForm({ socket }: RegistrationFormProps) {
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div>
               <h2 className="text-2xl font-bold text-white mb-2">Entry Fee Checkout</h2>
-              <p className="text-slate-400 text-sm">Secure your spot in the bracket.</p>
+              <p className="text-slate-400 text-sm">Transfer the registration fee to secure your spot.</p>
             </div>
             
             <div className="bg-slate-800/50 p-6 rounded-xl border border-orange-500/20">
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center mb-4 border-b border-slate-700/50 pb-4">
                 <span className="text-slate-300 font-medium">{teamName} Registration</span>
-                <span className="text-xl font-bold text-white">Rs. 5,000</span>
+                <span className="text-2xl font-black text-orange-500">Rs. 5,000</span>
               </div>
-              <div className="space-y-2 mb-6 text-sm text-slate-400">
-                <div className="flex justify-between"><span>Base Entry Fee</span><span>Rs. 4,500</span></div>
-                <div className="flex justify-between"><span>Admin Surcharge</span><span>Rs. 500</span></div>
+              
+              <div className="bg-slate-900 border border-slate-700 rounded-xl p-5 mb-6 text-center space-y-2">
+                <p className="text-sm text-slate-400 uppercase tracking-widest font-bold">Transfer To</p>
+                <div className="text-2xl font-black text-green-400 tracking-wider">03416000758</div>
+                <p className="text-slate-300 font-bold">Shawaz Iqbal</p>
+                <p className="text-xs text-slate-500 pt-2">Easypaisa Account</p>
+              </div>
+
+              <div className="bg-orange-500/10 border border-orange-500/20 text-orange-400 text-sm p-4 rounded-lg mb-6 leading-relaxed">
+                <strong className="block mb-1 text-orange-500">Important Instruction:</strong>
+                Please send exactly Rs. 5,000 to the Easypaisa account above. Admin will verify your transfer against your Contact Number ({contactDetails}).
               </div>
               
               <button onClick={handlePaymentAndSubmit} disabled={isProcessingPayment}
-                className="w-full relative flex justify-center items-center gap-2 bg-orange-600 hover:bg-orange-500 text-white font-bold py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(234,88,12,0.3)] hover:shadow-[0_0_30px_rgba(234,88,12,0.5)]">
+                className="w-full relative flex justify-center items-center gap-2 bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(22,163,74,0.3)] hover:shadow-[0_0_30px_rgba(22,163,74,0.5)]">
                 {isProcessingPayment ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" /> Processing Payment...</>
+                  <><Loader2 className="w-5 h-5 animate-spin" /> Submitting...</>
                 ) : (
-                  <><CreditCard className="w-5 h-5" /> Pay Rs. 5,000 via Stripe</>
+                  <><CheckCircle2 className="w-5 h-5" /> I Have Sent Rs. 5,000 to Easypaisa</>
                 )}
               </button>
-              <p className="text-center text-xs text-slate-500 mt-4">Simulated secure payment via Stripe checkout.</p>
             </div>
             
             <button onClick={() => setStep(2)} disabled={isProcessingPayment} className="w-full text-slate-500 hover:text-slate-300 py-2 transition-colors font-medium text-sm">

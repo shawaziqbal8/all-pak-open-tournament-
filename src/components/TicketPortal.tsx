@@ -60,25 +60,11 @@ export default function TicketPortal({ matches }: TicketPortalProps) {
         timestamp: new Date().toISOString()
       });
 
-      const res = await fetch('/api/checkout-ticket', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ticketId: id, name: selectedTicket.name, price: selectedTicket.price, desc: selectedTicket.desc })
-      });
-      const data = await res.json();
-      
-      if (data.url) {
-        window.location.href = data.url;
-      } else if (data.success) {
-        await updateDoc(doc(db, 'tickets', id), { paymentStatus: 'paid' });
-        setSuccess(true);
-        setIsProcessing(false);
-      } else {
-        alert('Payment processing failed.');
-        setIsProcessing(false);
-      }
+      setSuccess(true);
+      setIsProcessing(false);
     } catch (e) {
       console.error(e);
+      alert('Failed to process. Please try again.');
       setIsProcessing(false);
     }
   };
@@ -165,13 +151,27 @@ export default function TicketPortal({ matches }: TicketPortalProps) {
                      </div>
                   </div>
 
+                  <div className="bg-slate-950 border border-slate-800 rounded-lg p-4 mt-4 space-y-2">
+                    <p className="text-sm font-bold text-orange-400">Payment Instructions</p>
+                    <p className="text-xs text-slate-400">
+                      Please send exactly <strong>PKR {selectedTicket.price}</strong> to:
+                    </p>
+                    <div className="bg-slate-900 p-2 rounded border border-slate-800 text-center">
+                      <div className="font-mono text-green-400 font-black tracking-wider">03416000758</div>
+                      <div className="text-xs text-slate-400 font-bold uppercase mt-1">Shawaz Iqbal (Easypaisa)</div>
+                    </div>
+                    <p className="text-xs text-slate-500 text-center leading-relaxed mt-2">
+                      Submit after you have transferred the amount.
+                    </p>
+                  </div>
+
                   <button 
                     onClick={handlePurchase}
                     disabled={isProcessing || !buyerName || !buyerPhone}
-                    className="w-full bg-orange-600 hover:bg-orange-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-colors mt-2 flex items-center justify-center gap-2 text-lg shadow-lg"
+                    className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-colors mt-4 flex items-center justify-center gap-2 text-lg shadow-lg"
                   >
                     {isProcessing ? 'Processing...' : (
-                      <><Ticket className="w-5 h-5" /> Pay PKR {selectedTicket.price}</>
+                      <><CheckCircle2 className="w-5 h-5" /> I have sent PKR {selectedTicket.price}</>
                     )}
                   </button>
                 </div>
