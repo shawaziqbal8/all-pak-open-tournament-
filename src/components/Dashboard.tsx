@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MatchScore, TeamReg } from '../types';
-import { Activity, Calendar, Trophy, Users, BanknotesIcon as Banknotes, ShieldCheck, DollarSign, FileText, X, Clock, Zap, Target } from 'lucide-react';
+import { Activity, Calendar, Trophy, Users, Banknote, ShieldCheck, DollarSign, FileText, X, Clock, Zap, Target, MapPin } from 'lucide-react';
 
 interface DashboardProps {
   matches: MatchScore[];
@@ -111,6 +111,85 @@ export default function Dashboard({ matches, teams, setActiveTab }: DashboardPro
                <p className="text-4xl font-black text-white">{timeLeft.seconds}</p>
                <p className="text-[10px] font-black text-orange-200/80 uppercase tracking-widest mt-1">Secs</p>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tournament Information Portal Box */}
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 border border-slate-700/80 p-8 rounded-2xl shadow-xl mb-12 relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none scale-150 translate-x-12 -translate-y-12">
+          <Trophy className="w-64 h-64 text-white" />
+        </div>
+        
+        <div className="relative z-10">
+          <div className="text-center md:text-left mb-8">
+            <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight mb-2">
+              <span className="text-orange-500">🏆</span> All Pakistan Open Volleyball Tournament
+            </h1>
+            <p className="text-slate-400 font-medium tracking-wide">Registration is now officially open! Join or register your club to claim the title.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="bg-slate-950/50 border border-slate-800 p-5 rounded-xl flex items-start gap-4 hover:border-orange-500/30 transition-colors">
+              <div className="bg-orange-500/10 p-3 rounded-lg text-orange-500 shrink-0">
+                <MapPin className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-300 uppercase tracking-widest mb-1">Venue</h4>
+                <p className="text-white font-medium text-sm leading-relaxed">Khursheed Khan Volleyball Ground,<br/>Taja Maira, Bisham, Shangla.</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-950/50 border border-slate-800 p-5 rounded-xl flex items-start gap-4 hover:border-orange-500/30 transition-colors">
+              <div className="bg-orange-500/10 p-3 rounded-lg text-orange-500 shrink-0">
+                <Calendar className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-300 uppercase tracking-widest mb-1">Starting Date</h4>
+                <p className="text-white font-medium text-lg">2 July</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-950/50 border border-slate-800 p-5 rounded-xl flex items-start gap-4 hover:border-orange-500/30 transition-colors">
+              <div className="bg-orange-500/10 p-3 rounded-lg text-orange-500 shrink-0">
+                <Users className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-300 uppercase tracking-widest mb-1">Chief Organizers</h4>
+                <p className="text-white font-medium">Raham Iqbal Khan &<br/>Bakht Zeb</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-950/50 border border-slate-800 p-5 rounded-xl flex items-start gap-4 hover:border-orange-500/30 transition-colors">
+              <div className="bg-orange-500/10 p-3 rounded-lg text-orange-500 shrink-0">
+                <Banknote className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-300 uppercase tracking-widest mb-1">Sponsored By</h4>
+                <p className="text-white font-medium">FGC<br/><span className="text-sm text-slate-400 normal-case tracking-normal font-normal">(Fawad Group of Companies)</span></p>
+              </div>
+            </div>
+
+            <div className="bg-slate-950/50 border border-slate-800 p-5 rounded-xl flex items-start gap-4 hover:border-orange-500/30 transition-colors">
+              <div className="bg-orange-500/10 p-3 rounded-lg text-orange-500 shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-phone"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-slate-300 uppercase tracking-widest mb-1">Contact</h4>
+                <p className="text-white font-medium text-lg">0306-0888584</p>
+              </div>
+            </div>
+            
+            {setActiveTab && (
+              <div className="flex items-center justify-center p-2">
+                <button 
+                  onClick={() => setActiveTab('register')}
+                  className="w-full h-full min-h-[80px] bg-white hover:bg-slate-200 text-slate-900 font-black uppercase tracking-widest rounded-xl transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 flex items-center justify-center gap-2 border border-white"
+                >
+                  Register Now <Zap className="w-5 h-5 text-orange-500" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

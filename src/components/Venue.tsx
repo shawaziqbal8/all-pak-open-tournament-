@@ -82,7 +82,7 @@ export default function Venue() {
                   <p className="text-xs text-orange-500 font-bold tracking-wider uppercase">Khursheed Khan Volleyball Ground</p>
                </div>
              </div>
-             <p className="text-sm text-slate-400 mb-3">Maira,<br/>Bisham, Shangla</p>
+             <p className="text-sm text-slate-400 mb-3">Taja Maira,<br/>Bisham, Shangla</p>
              <button className="w-full bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
                <Navigation className="w-4 h-4" /> Get Directions
              </button>
