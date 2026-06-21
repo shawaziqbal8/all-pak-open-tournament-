@@ -109,16 +109,16 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
   };
 
   const handleUploadFile = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile || !previewUrl) return;
 
     setIsUploading(true);
-    let fileToUpload = selectedFile;
+    let finalDataUrl = previewUrl;
 
     // Auto-compress images
-    if (selectedFile.type.startsWith('image/') && previewUrl) {
+    if (selectedFile.type.startsWith('image/')) {
       addUploadLog('Optimizing image size...');
       try {
-        fileToUpload = await new Promise<File>((resolve, reject) => {
+        finalDataUrl = await new Promise<string>((resolve, reject) => {
           const img = new Image();
           img.onload = () => {
             const canvas = document.createElement('canvas');
@@ -143,81 +143,40 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
             const ctx = canvas.getContext('2d');
             ctx?.drawImage(img, 0, 0, width, height);
 
-            canvas.toBlob((blob) => {
-              if (blob) {
-                resolve(new File([blob], selectedFile.name, {
-                  type: 'image/jpeg',
-                  lastModified: Date.now(),
-                }));
-              } else {
-                reject(new Error('Canvas is empty'));
-              }
-            }, 'image/jpeg', 0.85); // 85% quality
+            resolve(canvas.toDataURL('image/jpeg', 0.85)); // 85% quality
           };
           img.onerror = () => reject(new Error('Failed to load image'));
           img.src = previewUrl;
         });
-        addUploadLog(`Image optimized to ${(fileToUpload.size / 1024).toFixed(2)} KB.`);
+        addUploadLog(`Image optimized successfully.`);
       } catch (err) {
         addUploadLog(`Optimization failed: ${err}. Uploading original.`);
       }
     }
 
-    addUploadLog('Upload Initiated using resumable storage SDK.');
-
-    const storageRef = ref(storage, `ads/${Date.now()}_${fileToUpload.name}`);
-    const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
-
-    uploadTask.on('state_changed', 
-      (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setUploadProgress(progress);
-        
-        switch (snapshot.state) {
-          case 'paused':
-            addUploadLog('Upload is paused');
-            break;
-          case 'running':
-            // we don't log every running state to avoid spamming
-            break;
-        }
-      }, 
-      (error) => {
+    addUploadLog('Saving asset metadata to database...');
+    
+    try {
+      setUploadProgress(50);
+      const id = 'ad_' + Date.now();
+      await setDoc(doc(db, 'ads', id), { 
+        url: finalDataUrl, 
+        active: true, 
+        type: previewType 
+      });
+      
+      setUploadProgress(100);
+      addUploadLog('Ad successfully registered in database.');
+      setTimeout(() => {
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        setUploadProgress(0);
         setIsUploading(false);
-        if (error.code === 'storage/retry-limit-exceeded') {
-          addUploadLog('Network Timeout or Max Retry Limit Exceeded.');
-        } else if (error.code === 'storage/unauthorized') {
-          addUploadLog('Permission Denied. Target storage rules may be missing.');
-        } else {
-          addUploadLog(`Upload Failed: ${error.message}`);
-        }
-      }, 
-      async () => {
-        addUploadLog('File successfully uploaded to Firebase Storage.');
-        try {
-          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-          addUploadLog('Download URL acquired. Saving to database...');
-
-          const id = 'ad_' + Date.now();
-          await setDoc(doc(db, 'ads', id), { 
-            url: downloadUrl, 
-            active: true, 
-            type: previewType 
-          });
-
-          addUploadLog('Ad successfully registered in database.');
-          setTimeout(() => {
-            setSelectedFile(null);
-            setPreviewUrl(null);
-            setUploadProgress(0);
-            setIsUploading(false);
-          }, 2000);
-        } catch (err) {
-          addUploadLog(`Database save failed: ${err}`);
-          setIsUploading(false);
-        }
-      }
-    );
+      }, 2000);
+    } catch (err) {
+      addUploadLog(`Database save failed: ${err}`);
+      setIsUploading(false);
+    }
   };
 
   const handleToggleAd = async (id: string, active: boolean) => {
