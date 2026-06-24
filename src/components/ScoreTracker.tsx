@@ -46,7 +46,7 @@ export default function ScoreTracker({ matches, socket }: ScoreTrackerProps) {
     <div className="space-y-8">
       <h2 className="text-2xl font-black text-white">Live Score Tracker</h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {matches.map((match) => (
+        {matches.filter(m => m.status !== 'pending').map((match) => (
           <div key={match.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg relative">
             {match.status === 'live' && (
               <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-red-500 to-orange-500 animate-pulse"></div>

@@ -165,7 +165,7 @@ export default function RegistrationStatus() {
                       <h4 className="font-bold text-xl text-white">{team.teamName}</h4>
                       <p className="text-sm text-slate-400">Captain: {team.captainName}</p>
                     </div>
-                    {team.verified ? (
+                    {team.isVerified ? (
                       <div className="flex items-center gap-2 text-green-500 bg-green-500/10 px-3 py-1 rounded-full text-sm font-bold border border-green-500/20">
                         <CheckCircle2 className="w-4 h-4" /> Verified
                       </div>
@@ -175,7 +175,7 @@ export default function RegistrationStatus() {
                       </div>
                     )}
                   </div>
-                  {team.verified ? (
+                  {team.isVerified ? (
                     <button onClick={() => handlePrintTeamPass(team)} className="bg-slate-800 hover:bg-slate-700 text-white w-full py-3 rounded-lg font-bold flex items-center justify-center gap-2 transition-colors">
                       <Printer className="w-5 h-5" /> Print Team Pass
                     </button>

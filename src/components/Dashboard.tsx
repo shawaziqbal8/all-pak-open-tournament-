@@ -13,16 +13,17 @@ export default function Dashboard({ matches, teams, setActiveTab }: DashboardPro
   const isLoading = matches.length === 0 && teams.length === 0;
 
   const liveGames = matches.filter(m => m.status === 'live').length;
-  const upcomingGames = matches.filter(m => m.status === 'upcoming').length;
+  const upcomingGames = matches.filter(m => m.status === 'published').length;
   
-  const verifiedTeams = teams.filter(t => t.verified).length;
+  const verifiedTeamsList = teams.filter(t => t.isVerified);
+  const verifiedTeams = verifiedTeamsList.length;
   const fundsRaised = verifiedTeams * 5000;
 
   // Analytics Aggregation
   const teamStats: Record<string, { pointsScored: number, setsWon: number, setsPlayed: number }> = {};
 
   matches.forEach(m => {
-    if (m.status !== 'upcoming') {
+    if (m.status !== 'published') {
       if (!teamStats[m.team1]) teamStats[m.team1] = { pointsScored: 0, setsWon: 0, setsPlayed: 0 };
       if (!teamStats[m.team2]) teamStats[m.team2] = { pointsScored: 0, setsWon: 0, setsPlayed: 0 };
 
@@ -231,7 +232,7 @@ export default function Dashboard({ matches, teams, setActiveTab }: DashboardPro
             <div>
               <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-2">Registered Teams</p>
               <div className="flex items-baseline gap-2">
-                <p className="text-4xl font-black text-white">{isLoading ? '-' : teams.length}</p>
+                <p className="text-4xl font-black text-white">{isLoading ? '-' : verifiedTeamsList.length}</p>
                 {!isLoading && <p className="text-xs text-emerald-400 font-bold bg-emerald-400/10 px-2 py-0.5 rounded-full">{verifiedTeams} verified</p>}
               </div>
             </div>
@@ -302,13 +303,13 @@ export default function Dashboard({ matches, teams, setActiveTab }: DashboardPro
 
       <div className="mb-12">
         <h2 className="text-2xl font-black text-white mb-6 uppercase tracking-wider flex items-center gap-2"><Users className="w-6 h-6 text-orange-500" /> Registered Teams Profiles</h2>
-        {teams.length === 0 ? (
+        {verifiedTeamsList.length === 0 ? (
           <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl text-center shadow-lg">
             <p className="text-slate-500">No teams registered yet.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {teams.map(team => (
+            {verifiedTeamsList.map(team => (
               <div key={team.id} className="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-slate-700 transition-all group overflow-hidden shadow-lg relative" tabIndex={0}>
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/5 to-transparent rounded-full -mr-16 -mt-16 pointer-events-none group-hover:scale-150 transition-transform duration-500"></div>
                 <div className="flex justify-between items-start mb-6 relative z-10">
@@ -318,8 +319,8 @@ export default function Dashboard({ matches, teams, setActiveTab }: DashboardPro
                        <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500">Capt</span> {team.captainName}
                     </p>
                   </div>
-                  <div className={`text-[10px] uppercase tracking-widest font-black px-2 py-1 rounded bg-slate-950 border ${team.verified ? 'text-emerald-400 border-emerald-500/30' : 'text-orange-400 border-orange-500/30'}`}>
-                    {team.verified ? 'Verified' : 'Pending'}
+                  <div className={`text-[10px] uppercase tracking-widest font-black px-2 py-1 rounded bg-slate-950 border ${team.isVerified ? 'text-emerald-400 border-emerald-500/30' : 'text-orange-400 border-orange-500/30'}`}>
+                    {team.isVerified ? 'Verified' : 'Pending'}
                   </div>
                 </div>
                 

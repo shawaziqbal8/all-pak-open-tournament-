@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MatchScore, TeamReg } from '../types';
+import { MatchScore, TeamReg, AuditLog } from '../types';
 import { Socket } from 'socket.io-client';
 import { CheckCircle2, ChevronRight, MessageCircle, Send, ShieldAlert, XCircle, Plus, Calendar as CalendarIcon, Clock, Edit2, Lock, ImagePlus, MonitorPlay, Trash2, Upload, AlertTriangle, Download } from 'lucide-react';
 import { db, storage } from '../lib/firebase';
@@ -20,7 +20,7 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'registrations' | 'bracket' | 'notifications' | 'analytics' | 'ads' | 'tickets'>('registrations');
+  const [activeTab, setActiveTab] = useState<'registrations' | 'bracket' | 'notifications' | 'analytics' | 'ads' | 'tickets' | 'audit'>('registrations');
   const [selectedTeam, setSelectedTeam] = useState<any | null>(null);
   const [notificationMsg, setNotificationMsg] = useState('');
   const [alertMsg, setAlertMsg] = useState('');
@@ -49,6 +49,8 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
     setUploadLogs(prev => [...prev, `${new Date().toLocaleTimeString()} - ${msg}`]);
   };
 
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+
   useEffect(() => {
     let isSubscribed = true;
     if (isAuthenticated) {
@@ -59,7 +61,10 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
       const unsubTickets = onSnapshot(collection(db, 'tickets'), (snapshot) => {
         if (isSubscribed) setTickets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       });
-      return () => { isSubscribed = false; unsub(); unsubTickets(); };
+      const unsubAudit = onSnapshot(collection(db, 'auditLogs'), (snapshot) => {
+        if (isSubscribed) setAuditLogs(snapshot.docs.map(doc => doc.data() as AuditLog));
+      });
+      return () => { isSubscribed = false; unsub(); unsubTickets(); unsubAudit(); };
     }
   }, [isAuthenticated]);
 
@@ -187,8 +192,8 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
     try { await deleteDoc(doc(db, 'ads', id)); } catch(e) {}
   };
 
-  const pendingTeams = teams.filter(t => !t.verified);
-  const verifiedTeams = teams.filter(t => t.verified);
+  const pendingTeams = teams.filter(t => !t.isVerified);
+  const verifiedTeams = teams.filter(t => t.isVerified);
 
   const handleDownloadCSV = () => {
     const headers = ['Team Name', 'Captain Name', 'Contact Details', 'Status', 'Verified', 'Player Details (Name - Jersey)'];
@@ -204,7 +209,7 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
         `"${(team.captainName || '').replace(/"/g, '""')}"`,
         `"${(team.contactDetails || '').replace(/"/g, '""')}"`,
         `"${team.paymentStatus || ''}"`,
-        team.verified ? 'Yes' : 'No',
+        team.isVerified ? 'Yes' : 'No',
         `"${rosterDetails.replace(/"/g, '""')}"`
       ];
       csvRows.push(row.join(','));
@@ -220,11 +225,60 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
     document.body.removeChild(link);
   };
 
-  const handleVerify = async (teamId: string, verified: boolean) => {
+  const logAuditAction = async (action: string, targetId: string, targetType: 'team' | 'match') => {
     try {
-      await updateDoc(doc(db, 'teams', teamId), { verified });
+      const logId = 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+      await setDoc(doc(db, 'auditLogs', logId), {
+        id: logId,
+        action,
+        adminId: 'admin_id_placeholder', // Since we don't have a real admin auth yet
+        adminEmail: 'admin@example.com',
+        targetId,
+        targetType,
+        timestamp: new Date().toISOString()
+      });
+    } catch (e) {
+      console.error("Error logging audit action:", e);
+    }
+  };
+
+  const handleVerify = async (teamId: string, isVerified: boolean) => {
+    try {
+      await updateDoc(doc(db, 'teams', teamId), { isVerified });
+      if (isVerified) {
+        await logAuditAction('Approved team registration', teamId, 'team');
+      }
     } catch(e) {
       console.error(e);
+    }
+  };
+
+  const handlePublishMatch = async (matchId: string) => {
+    try {
+      await updateDoc(doc(db, 'matches', matchId), { status: 'published' });
+      await logAuditAction('Published new match', matchId, 'match');
+    } catch(e) {
+      console.error(e);
+    }
+  };
+
+  const handleDeleteTeam = async (teamId: string) => {
+    if (confirm("Are you sure you want to delete this team?")) {
+      try {
+        await deleteDoc(doc(db, 'teams', teamId));
+      } catch(e) {
+        console.error("Error deleting team:", e);
+      }
+    }
+  };
+
+  const handleDeleteMatch = async (matchId: string) => {
+    if (confirm("Are you sure you want to delete this match?")) {
+      try {
+        await deleteDoc(doc(db, 'matches', matchId));
+      } catch(e) {
+        console.error("Error deleting match:", e);
+      }
     }
   };
 
@@ -384,7 +438,7 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
       sets2: 0,
       points1: 0,
       points2: 0,
-      status: 'upcoming',
+      status: 'pending',
       startTime: new Date(newMatchDate).toISOString()
     };
 
@@ -479,6 +533,9 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
         </button>
         <button onClick={() => setActiveTab('tickets')} className={`px-4 py-2 rounded-lg font-bold text-sm ${activeTab === 'tickets' ? 'bg-red-500/20 text-red-500' : 'text-slate-400 hover:text-slate-200'}`}>
           Tickets ({tickets.filter(t => !t.verified).length} Pending)
+        </button>
+        <button onClick={() => setActiveTab('audit')} className={`px-4 py-2 rounded-lg font-bold text-sm ${activeTab === 'audit' ? 'bg-red-500/20 text-red-500' : 'text-slate-400 hover:text-slate-200'}`}>
+          Audit Logs
         </button>
       </div>
 
@@ -624,6 +681,9 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
                   <button onClick={() => handleWhatsAppContact(team.contactDetails, `Hi ${team.captainName}, your registration for ${team.teamName} is pending. Please complete the remaining steps.`)} className="px-4 bg-blue-500/20 hover:bg-blue-500/30 text-blue-500 rounded-lg flex items-center justify-center transition-colors tooltip" aria-label="WhatsApp Captain">
                     <MessageCircle className="w-4 h-4" />
                   </button>
+                  <button onClick={() => handleDeleteTeam(team.id)} className="px-4 bg-red-500/20 hover:bg-red-500/30 text-red-500 rounded-lg flex items-center justify-center transition-colors tooltip" aria-label="Delete Team">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
             ))}
@@ -648,6 +708,9 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
                   </button>
                   <button onClick={() => handleVerify(team.id, false)} className="text-slate-500 hover:text-red-400 p-2">
                     <XCircle className="w-5 h-5" />
+                  </button>
+                  <button onClick={() => handleDeleteTeam(team.id)} className="text-slate-500 hover:text-red-600 p-2">
+                    <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
               </div>
@@ -703,7 +766,9 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
                  if (a.status !== b.status) {
                     if (a.status === 'live') return -1;
                     if (b.status === 'live') return 1;
-                    if (a.status === 'upcoming') return -1;
+                    if (a.status === 'published') return -1;
+                    if (b.status === 'published') return 1;
+                    if (a.status === 'pending') return -1;
                     return 1;
                  }
                  return new Date(b.startTime || 0).getTime() - new Date(a.startTime || 0).getTime();
@@ -712,6 +777,7 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
                   <div className={`absolute top-0 right-0 p-1 px-3 text-[10px] font-bold rounded-bl-lg uppercase tracking-wider ${
                     match.status === 'live' ? 'bg-red-500/20 text-red-500' :
                     match.status === 'finished' ? 'bg-slate-800 text-slate-400' :
+                    match.status === 'pending' ? 'bg-orange-500/20 text-orange-500' :
                     'bg-blue-500/20 text-blue-500'
                   }`}>
                     {match.status}
@@ -724,16 +790,26 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
                      <span className="flex items-center gap-2">
                        <CalendarIcon className="w-3 h-3" /> {match.startTime ? new Date(match.startTime).toLocaleString() : 'TBD'}
                      </span>
-                     {match.status === 'upcoming' && (
-                       <div className="flex items-center gap-2">
-                         <button onClick={() => notifyMatchScheduled(match, 1)} className="text-green-500 hover:text-green-400 flex items-center gap-1 font-bold">
-                           <MessageCircle className="w-3 h-3" /> T1
+                     <div className="flex items-center gap-4">
+                       {match.status === 'pending' && (
+                         <button onClick={() => handlePublishMatch(match.id)} className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 px-3 py-1 rounded font-bold text-xs transition-colors">
+                           Publish Match
                          </button>
-                         <button onClick={() => notifyMatchScheduled(match, 2)} className="text-green-500 hover:text-green-400 flex items-center gap-1 font-bold">
-                           <MessageCircle className="w-3 h-3" /> T2
-                         </button>
-                       </div>
-                     )}
+                       )}
+                       {match.status === 'published' && (
+                         <div className="flex items-center gap-2">
+                           <button onClick={() => notifyMatchScheduled(match, 1)} className="text-green-500 hover:text-green-400 flex items-center gap-1 font-bold">
+                             <MessageCircle className="w-3 h-3" /> T1
+                           </button>
+                           <button onClick={() => notifyMatchScheduled(match, 2)} className="text-green-500 hover:text-green-400 flex items-center gap-1 font-bold">
+                             <MessageCircle className="w-3 h-3" /> T2
+                           </button>
+                         </div>
+                       )}
+                       <button onClick={() => handleDeleteMatch(match.id)} className="text-red-500 hover:text-red-400 flex items-center justify-center transition-colors">
+                         <Trash2 className="w-4 h-4" />
+                       </button>
+                     </div>
                   </div>
                 </div>
               ))}
@@ -886,6 +962,32 @@ export default function AdminDashboard({ matches, teams, socket }: { matches: Ma
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'audit' && (
+        <div className="space-y-6">
+          <h2 className="text-2xl font-bold text-white mb-6">Audit Logs</h2>
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-xl">
+            {auditLogs.length === 0 ? (
+              <p className="text-slate-500 text-center">No audit logs available.</p>
+            ) : (
+              <div className="space-y-3">
+                {auditLogs.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map(log => (
+                  <div key={log.id} className="flex flex-col sm:flex-row justify-between sm:items-center bg-slate-800/30 p-4 rounded-lg border border-slate-700/50 gap-2">
+                    <div>
+                      <p className="font-bold text-slate-200">{log.action}</p>
+                      <p className="text-xs text-slate-400">Target Type: {log.targetType} | Target ID: {log.targetId}</p>
+                    </div>
+                    <div className="text-left sm:text-right">
+                      <p className="text-xs text-slate-500">{new Date(log.timestamp).toLocaleString()}</p>
+                      <p className="text-xs text-slate-400">Admin: {log.adminEmail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

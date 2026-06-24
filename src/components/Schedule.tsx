@@ -111,7 +111,7 @@ export default function Schedule({ matches }: { matches: MatchScore[] }) {
     document.body.removeChild(link);
   };
 
-  const upcomingMatches = matches.filter(m => m.status === 'upcoming');
+  const upcomingMatches = matches.filter(m => m.status === 'published');
   const pastMatches = matches.filter(m => m.status === 'finished');
 
   return (

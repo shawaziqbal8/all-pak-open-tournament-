@@ -68,7 +68,7 @@ export default function RegistrationForm({ socket }: RegistrationFormProps) {
         contactDetails,
         roster: roster.filter(p => p.name.trim() !== ''),
         paymentStatus: 'pending',
-        verified: false
+        isVerified: false
       });
 
       // No Stripe, just directly to success screen

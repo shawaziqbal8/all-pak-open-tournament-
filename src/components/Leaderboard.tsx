@@ -9,7 +9,7 @@ export default function Leaderboard({ matches, teams }: { matches: MatchScore[],
   // Simple calculation for volleyball: 
   // Points logic: win 3-0/3-1 = 3pts, win 3-2 = 2pts, loss 2-3 = 1pt. (Or just generic logic based on wins for now)
   
-  const standings = teams.map(team => {
+  const standings = teams.filter(t => t.isVerified).map(team => {
     let wins = 0;
     let losses = 0;
     let points = 0;
